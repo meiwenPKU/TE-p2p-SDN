@@ -9,10 +9,13 @@
 
 const double NOPATH = -10;
 const int N_AS = 10 ; // the number of AS's in the topology
+const int kPath = 1; // the maximum paths used to transfer one commodity
 double prob_generate_traffic = 0.5; // the prob of a node generating traffic
 double prob_within_AS = 0.1; // the prob of the destination of a connection is within the AS
 double prob_Google = 0.5;
 const double delta = 0.0001;
+const double multiplier = 1;
+const double loadC = 3.99;
 
 int my_commodity_demand[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 //int my_commodity_demand[] = {10, 20};

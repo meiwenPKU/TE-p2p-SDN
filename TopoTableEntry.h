@@ -8,6 +8,7 @@
 #ifndef TOPO_TABLE_ENTRY_H
 #define TOPO_TABLE_ENTRY_H
 #include<stdint.h>
+#include <set>
 using namespace std;
 
 class TopoTableEntry{
@@ -20,12 +21,6 @@ public:
 	double m_weight;
 	double m_BW;
 	set<int> m_isExchanged; // the set of ASes which the entry has been exchanged with
-/*
-	TopoTableEntry(BaseVertex* source, BaseVertex* sink, double weight, double BW):
-		m_source(source), m_sink(sink), m_next(NULL),m_weight(weight), m_BW(BW){
-
-	}
-*/
 	TopoTableEntry(BaseVertex* source, BaseVertex* sink, BaseVertex* next, double weight, double BW):
 		m_source(source), m_sink(sink), m_next(next),m_weight(weight), m_BW(BW){
 
@@ -67,6 +62,3 @@ public:
 
 
 #endif
-
-
-
