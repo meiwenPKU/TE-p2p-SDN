@@ -485,7 +485,7 @@ int main(...)
                it_set != it_map->second.end(); ++ it_set)
           {
             Throughput += it_set->second;
-            Aver_cost += it_set->second * it_set->first.Weight();
+            Aver_cost += it_set->first.Weight();
             it_set->first.PrintOut(result);
             cout << "allocation to this path = " << it_set->second << endl;
             VirtualAS[index]->printPath(&(it_set->first));
@@ -512,7 +512,7 @@ int main(...)
               cout << "-->(" << oriASID << "," << oriNodeID << ")";
 
               Aver_cost += VirtualAS[index]->get_edge_weight(it_set->first.GetVertex(i-1),
-                           it_set->first.GetVertex(i)) * it_set->second;
+                           it_set->first.GetVertex(i));
               if (MappedNode->getGraphID() != ASes[index]->get_graphID())
               {
                 p_border = MappedNode;

@@ -319,7 +319,7 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
       	AS->recover_removed_edge(*it_remove);
       }
       */
-      
+
 
       if (result->length() > 0)
       {
@@ -604,7 +604,7 @@ void GenerateCommodity(vector<Graph*> ASes)
             }
             int desti = rand()%(ASes[desti_AS]->get_vertex_num());
             double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
-	    demand *= loadC; 
+	    demand *= loadC;
             Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),
                                                     ASes[desti_AS]->get_vertex(desti,ASes[desti_AS]->get_graphID()),demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
@@ -725,7 +725,7 @@ int main(...)
       //Google_TE_Optimization(VirtualAS[index], Allocation);
       //Max_Throughput_TE(VirtualAS[index], Allocation);
 
-       
+
       if (rand()%101/100.0 < prob_Google)
       {
       	Google_TE_Optimization(VirtualAS[index], Allocation);
@@ -734,9 +734,9 @@ int main(...)
       {
       	Max_Throughput_TE(VirtualAS[index], Allocation);
       }
-      
-      
-      
+
+
+
 
       /*
        * print out the allocation results
@@ -815,7 +815,9 @@ int main(...)
                it_set != it_map->second.end(); ++ it_set)
           {
             Throughput += it_set->second;
-            Aver_cost += it_set->second * it_set->first.Weight();
+            // cost is defined as the sum of the costs of the links in one path
+            // but not cost*flows
+            Aver_cost += it_set->first.Weight();
             it_set->first.PrintOut(result);
             cout << "allocation to this path = " << it_set->second << endl;
             VirtualAS[index]->printPath(&(it_set->first));
@@ -842,7 +844,7 @@ int main(...)
               cout << "-->(" << oriASID << "," << oriNodeID << ")";
 
               Aver_cost += VirtualAS[index]->get_edge_weight(it_set->first.GetVertex(i-1),
-                           it_set->first.GetVertex(i)) * it_set->second;
+                           it_set->first.GetVertex(i));
               if (MappedNode->getGraphID() != ASes[index]->get_graphID())
               {
                 p_border = MappedNode;
