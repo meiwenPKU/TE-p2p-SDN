@@ -132,7 +132,7 @@ void Graph::ConstructVirtualGraph(Graph* graph,const string& AS_file)
   while (ifs >> start_vertex)
   {
     ifs >> end_vertex >> edge_weight >> edge_BW >> start_AS >> end_AS;
-    edge_BW *= multiplier; 
+    edge_BW *= multiplier;
     start_vertex = start_vertex - num_Nodes * start_AS;
     end_vertex = end_vertex - num_Nodes * end_AS;
 
@@ -1232,7 +1232,7 @@ void Graph::ComputeTopoTable()
         // the destination is different from the source
         vector<BasePath*> kPathList;
         YenTopKShortestPathsAlg yenAlg(*this);
-        yenAlg.get_shortest_paths(p_source,p_sink,kPath, kPathList);
+        yenAlg.get_shortest_paths(p_source,p_sink, kK, kPathList);
         if (kPathList.size()==0)
         {
           continue;
@@ -1364,298 +1364,6 @@ bool Graph::UpdateTopoTable(TopoTableEntry entry)
   }
   return false;
 }
-/*
-void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
-{
-	// find whether the sink of the entry is in the advertise table
-	bool isFind = false;
-	for (vector<TopoTableEntry>::iterator it = m_AdvertisedTopoTable.m_vEntry.begin();
-			it != m_AdvertisedTopoTable.m_vEntry.end(); ++it)
-	{
-		if (it->m_sink == entry.m_sink)
-		{
-			isFind = true;
-			break;
-		}
-	}
-	if (isFind)
-	{
-		vector<TopoTableEntry> v_insertTopoEntry;
-		for (vector<BaseVertex*>::iterator it_border = m_vtBorderVertices.begin();
-				it_border != m_vtBorderVertices.end(); ++it_border)
-		{
-			vector<vector<TopoTableEntry>::const_iterator> it_BorderToBorder;
-			vector<vector<TopoTableEntry>::const_iterator> it_BorderToSink;
-			double k_max = 0;
-			vector<TopoTableEntry>::const_iterator it_k_maxB2B; // the iterator of entry from the border node to another border node
-			vector<TopoTableEntry>::const_iterator it_k_maxB2S; // the iterator of entry from the border to the sink
-			// find the k-shortest path from the border switch to the destination
-			for (vector<TopoTableEntry>::const_iterator it = m_TopoTable.m_vEntry.begin();
-							it != m_TopoTable.m_vEntry.end(); ++it)
-			{
-				if (it->m_sink == entry.m_sink)
-				{
-					for (vector<TopoTableEntry>::const_iterator it1 = m_TopoTable.m_vEntry.begin();
-									it1 != m_TopoTable.m_vEntry.end(); ++it1)
-					{
-						if (it1->m_sink == it->m_source && it1->m_source == *it_border)
-						{
-							double totalWeight = it1->m_weight + it->m_weight;
-							if (it_BorderToBorder.size()<kPath)
-							{
-								it_BorderToBorder.push_back(it1);
-								it_BorderToSink.push_back(it);
-								if (totalWeight > k_max)
-								{
-									k_max = totalWeight;
-									it_k_maxB2B = it1;
-									it_k_maxB2S = it;
-								}
-							}
-							else
-							{
-								if (totalWeight < k_max)
-								{
-									//delete the k-max path, and insert the new path
-									for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToBorder.begin();
-											it_de != it_BorderToBorder.end(); ++it_de)
-									{
-										if (*it_de == it_k_maxB2B)
-										{
-											*it_de = it1;
-										}
-									}
-
-									for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin();
-											it_de != it_BorderToSink.end(); ++it_de)
-									{
-										if (*it_de == it_k_maxB2S)
-										{
-											*it_de = it;
-										}
-									}
-
-									// find the k-max path in the new table
-									k_max = 0;
-									for (int i = 0; i < kPath; ++i)
-									{
-										if (it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight > k_max)
-										{
-											k_max = it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight;
-											it_k_maxB2B = it_BorderToBorder[i];
-											it_k_maxB2S = it_BorderToSink[i];
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-			if (it_BorderToBorder.size() == 0)
-				continue;
-
-			map<int,BaseVertex*> indexToVertex;
-			map<BaseVertex*, int> vertexToIndex;
-			int numVertices = 0;
-			for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToBorder.begin();
-					it_de != it_BorderToBorder.end(); ++it_de)
-			{
-				for (vector<BasePath*>::iterator it_path = m_vPathTable.begin();
-									it_path != m_vPathTable.end(); ++it_path)
-				{
-					if ((*it_path)->GetVertex(0) == (*(*it_de)).m_source &&
-							(*it_path)->GetLastVertex() == (*(*it_de)).m_sink &&
-							(*it_path)->Weight() == (*(*it_de)).m_weight)
-					{
-						for (int i = 0; i < (*it_path)->length(); ++i)
-						{
-							bool isAppear = false;
-							for (map<BaseVertex*, int>::iterator it_vertex = vertexToIndex.begin();
-									it_vertex != vertexToIndex.end(); ++it_vertex)
-							{
-								if (it_vertex->first == (*it_path)->GetVertex(i))
-								{
-									isAppear = true;
-									break;
-								}
-							}
-							if (!isAppear)
-							{
-								if (vertexToIndex.find((*it_path)->GetVertex(i)) == vertexToIndex.end())
-								{
-									vertexToIndex[(*it_path)->GetVertex(i)] = numVertices;
-									indexToVertex[numVertices] = (*it_path)->GetVertex(i);
-									numVertices++;
-								}
-							}
-						}
-						break;
-					}
-				}
-			}
-
-			for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin();
-					it_de != it_BorderToSink.end(); ++it_de)
-			{
-				bool isAppear = false;
-				for (map<BaseVertex*, int>::iterator it_vertex = vertexToIndex.begin();
-						it_vertex != vertexToIndex.end(); ++it_vertex)
-				{
-					if (it_vertex->first == (*(*it_de)).m_next)
-					{
-						isAppear = true;
-						break;
-					}
-				}
-				if (!isAppear)
-				{
-					if (vertexToIndex.find((*(*it_de)).m_next) == vertexToIndex.end())
-					{
-						vertexToIndex[(*(*it_de)).m_next] = numVertices;
-						indexToVertex[numVertices] = (*(*it_de)).m_next;
-						numVertices++;
-					}
-				}
-			}
-
-
-            if (vertexToIndex.find(entry.m_sink) == vertexToIndex.end())
-            {
-    			vertexToIndex[entry.m_sink] = numVertices;
-    			indexToVertex[numVertices] = entry.m_sink;
-    			numVertices++;
-            }
-
-			edge** graph = new edge*[numVertices];
-			for (int i = 0; i < numVertices; ++i)
-			{
-				graph[i] = new edge[numVertices];
-			}
-			for (int i = 0; i < numVertices; ++i)
-			{
-				for (int j = 0; j < numVertices; ++j)
-				{
-					graph[i][j].flow = 0;
-					graph[i][j].capacity = 0;
-					graph[i][j].cost = 0;
-				}
-			}
-
-			for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToBorder.begin();
-					it_de != it_BorderToBorder.end(); ++it_de)
-			{
-				for (vector<BasePath*>::iterator it_path = m_vPathTable.begin();
-									it_path != m_vPathTable.end(); ++it_path)
-				{
-					if ((*it_path)->GetVertex(0) == (*(*it_de)).m_source &&
-							(*it_path)->GetLastVertex() == (*(*it_de)).m_sink &&
-							(*it_path)->Weight() == (*(*it_de)).m_weight)
-					{
-						for (int i = 0; i < (*it_path)->length()-1; ++i)
-						{
-							BaseVertex* p_source = (*it_path)->GetVertex(i);
-							BaseVertex* p_sink = (*it_path)->GetVertex(i+1);
-							if (p_source == p_sink)
-								continue;
-							graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].capacity =
-								  get_edge_BW(p_source,p_sink);
-							graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].cost =
-									get_edge_weight(p_source,p_sink);
-						}
-						break;
-					}
-				}
-			}
-
-			for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin();
-					it_de != it_BorderToSink.end(); ++it_de)
-			{
-				for (vector<TopoTableEntry>::iterator it_first = m_TopoTable.m_vEntry.begin();
-						it_first != m_TopoTable.m_vEntry.end(); ++it_first)
-				{
-					if (it_first->m_source == (*(*it_de)).m_source &&
-							it_first->m_sink == (*(*it_de)).m_next)
-					{
-						BaseVertex* p_source = it_first->m_source;
-						BaseVertex* p_sink = it_first->m_sink;
-	                    if (p_source == p_sink)
-	                    	continue;
-						graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].capacity = it_first->m_BW;
-						graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].cost = it_first->m_weight;
-
-						if (p_sink == entry.m_sink)
-							continue;
-						graph[vertexToIndex.at(p_sink)][vertexToIndex.at(entry.m_sink)].capacity = (*(*it_de)).m_BW;
-						graph[vertexToIndex.at(p_sink)][vertexToIndex.at(entry.m_sink)].cost = (*(*it_de)).m_weight - it_first->m_weight;
-
-					}
-				}
-			}
-
-			FordFulkersonAlg myAlg(graph, numVertices,
-								vertexToIndex.at(*it_border), vertexToIndex.at(entry.m_sink));
-			double max_flow = 0;
-			double max_cost = 0;
-			myAlg.MaxFlow(max_flow,max_cost);
-
-			vector<int> v_ASpath((*(*it_BorderToSink.begin())).m_vASPath.begin(),
-					(*(*it_BorderToSink.begin())).m_vASPath.end());
-			vector<int>::iterator it_path;
-			for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin() + 1;
-								it_de != it_BorderToSink.end(); ++it_de)
-			{
-				vector<int> v_temp_path(N_AS);
-				it_path = set_intersection(v_ASpath.begin(), v_ASpath.end(),
-						(*(*it_de)).m_vASPath.begin(), (*(*it_de)).m_vASPath.end(),
-						v_temp_path.begin());
-				v_temp_path.resize(it_path-v_temp_path.begin());
-				v_ASpath = v_temp_path;
-			}
-
-
-			v_insertTopoEntry.push_back(TopoTableEntry(*it_border,entry.m_sink,NULL,max_cost,max_flow,v_ASpath));
-			//m_AdvertisedTopoTable.Insert(TopoTableEntry(*it_border,entry.m_sink,NULL,max_cost,max_flow,v_ASpath));
-		}
-		for (vector<TopoTableEntry>::iterator it = v_insertTopoEntry.begin();
-				it != v_insertTopoEntry.end(); ++it)
-		{
-			for (vector<TopoTableEntry>::iterator it_ad = m_AdvertisedTopoTable.m_vEntry.begin();
-					it_ad != m_AdvertisedTopoTable.m_vEntry.end(); ++it_ad)
-			{
-				if (it_ad->m_source == it->m_source && it_ad->m_sink == it->m_sink)
-				{
-					m_AdvertisedTopoTable.Delete(it_ad);
-					m_AdvertisedTopoTable.Insert(*it);
-				}
-			}
-		}
-	}
-	else
-	{
-		vector<TopoTableEntry> v_insertTopoEntry;
-		for (vector<TopoTableEntry>::iterator it = m_AdvertisedTopoTable.m_vEntry.begin();
-				it != m_AdvertisedTopoTable.m_vEntry.end(); ++it)
-		{
-			if (it->m_sink == entry.m_source)
-			{
-				TopoTableEntry insertEntry = entry;
-				insertEntry.m_source = it->m_source;
-				insertEntry.m_next = NULL;
-				insertEntry.m_weight += it->m_weight;
-				insertEntry.m_BW = min(it->m_BW,entry.m_BW);
-				v_insertTopoEntry.push_back(insertEntry);
-			}
-		}
-		for (vector<TopoTableEntry>::iterator it = v_insertTopoEntry.begin();
-				it != v_insertTopoEntry.end(); ++it)
-		{
-			m_AdvertisedTopoTable.Insert(*it);
-		}
-	}
-}
-*/
 
 void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
 {
@@ -1694,7 +1402,7 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
             if (it1->m_sink == it->m_source && it1->m_source == *it_border)
             {
               double totalWeight = it1->m_weight + it->m_weight;
-              if (it_BorderToBorder.size()<kPath)
+              if (it_BorderToBorder.size() < kMaxComputePath)
               {
                 it_BorderToBorder.push_back(it1);
                 it_BorderToSink.push_back(it);
@@ -1713,28 +1421,9 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
                   //delete the k-max path, and insert the new path
                   it_BorderToBorder[index_max] = it1;
                   it_BorderToSink[index_max] = it;
-                  /*
-                  for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToBorder.begin();
-                  		it_de != it_BorderToBorder.end(); ++it_de)
-                  {
-                  	if (*it_de == it_k_maxB2B)
-                  	{
-                  		*it_de = it1;
-                  	}
-                  }
-
-                  for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin();
-                  		it_de != it_BorderToSink.end(); ++it_de)
-                  {
-                  	if (*it_de == it_k_maxB2S)
-                  	{
-                  		*it_de = it;
-                  	}
-                  }*/
-
                   // find the k-max path in the new table
                   k_max = 0;
-                  for (int i = 0; i < kPath; ++i)
+                  for (int i = 0; i < kMaxComputePath; ++i)
                   {
                     if (it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight > k_max)
                     {

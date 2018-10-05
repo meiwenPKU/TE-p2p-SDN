@@ -7,10 +7,9 @@
 #pragma once
 #include "GraphElements.h"
 #include "TopoTableEntry.h"
+#include "GlobalVariable.h"
 #include<vector>
 using namespace std;
-const int kPath = 1; // the maximum number of paths for each commodity, k may be different for different traffic
-// (i.e., self->other, self->self, other->self)
 class TopoTable
 {
 public:
@@ -92,6 +91,3 @@ public:
     cout << "**************************************" << endl;
   }
 };
-
-
-
