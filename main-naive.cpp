@@ -170,12 +170,6 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
         }
       }
     }
-    /*
-    		if (target_com->source_->getID() == 0 && target_com->sink_->getID()==271)
-    		{
-    			cout << "debug here" << endl;
-    		}
-    */
 
     if (min_cost == 1000000000)
     {
@@ -518,6 +512,7 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
    * advertise topology table until all ASes' topology tables are stable
    */
   int timeStamp;
+  int totalMsgExchange = 0;
   for (timeStamp = 0; timeStamp < 1000000; timeStamp++)
   {
     bool notStable = false;
@@ -560,7 +555,7 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                   //debug
                   cout << "(" << (*it_border)->getGraphID() << "," << (*it_border)->getID() << ")-->"
                        << "(" << (*it_peer)->getGraphID() << "," << (*it_peer)->getID() << ")" << endl;
-
+                  totalMsgExchange += 1;
                   for (vector<TopoTableEntry>::iterator it_topoEntry = (*it_AS)->m_TopoTable.m_vEntry.begin();
                        it_topoEntry != (*it_AS)->m_TopoTable.m_vEntry.end(); ++it_topoEntry)
                   {
@@ -584,10 +579,7 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                       }
                       bool localStable;
                       it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
-		      // insert the new entry into the topo table
-
-
-                      localStable = (*it)->UpdateTopoTable(TopoTableEntry(*it_border, it_topoEntry->m_sink, it_topoEntry->m_source,
+                      localStable = (*it)->UpdateTopoTableNaive(TopoTableEntry(*it_border, it_topoEntry->m_sink, it_topoEntry->m_source,
                                                            it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
                                                            min(it_topoEntry->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),it_topoEntry->m_vASPath));
                       notStable = localStable || notStable;
@@ -606,7 +598,7 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
       break;
     }
   }
-  cout << "time stamp = " << timeStamp << endl;
+  cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << ndl;
 }
 
 void GenerateCommodity(vector<Graph*> ASes)
