@@ -101,7 +101,7 @@ void FordFulkersonAlg::MaxFlow(double& max_flow, double& cost)
     			}
     			else if (m_graph[u][v].capacity > 0 & m_graph[v][u].capacity > 0)
     			{
-                    cout << "wrong: there are two reverse edges between two nodes" << endl;
+            cout << "wrong: there are two reverse edges between two nodes" << endl;
     			}
     		}
     	}
@@ -119,7 +119,3 @@ void FordFulkersonAlg::MaxFlow(double& max_flow, double& cost)
     }
     cost  = cost / max_flow;
 }
-
-
-
-

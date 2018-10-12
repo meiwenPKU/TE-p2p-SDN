@@ -42,7 +42,6 @@ public:
     m_vEntry = topoTable.m_vEntry;
   }
 
-
   void Insert(TopoTableEntry entry)
   {
     m_vEntry.push_back(entry);

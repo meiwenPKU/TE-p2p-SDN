@@ -845,6 +845,17 @@ BaseVertex* InterGraph::get_vertex( int node_id, int graphID )
   return vertex_pt;
 }
 
+void Graph::printGraph()
+{
+  cout << "Source    Sink    Weight    Bandwidth" << endl;
+  for (auto it = m_mpFanoutVertices.begin(); it != m_mpFanoutVertices.end(); ++it){
+    for (auto it_set = it->second->begin(); it_set != it->second->end(); ++it_set){
+      auto edgeCode = get_edge_code(it->first, *it_set);
+      cout << it->first->getID() << "    " << (*it_set)->getID() << "    " << m_mpEdgeCodeWeight.at(edgeCode) << "    " << m_mpEdgeCodeBW.at(edgeCode) << endl;
+    }
+  }
+}
+
 void Graph::clear()
 {
   m_nEdgeNum = 0;
@@ -1415,7 +1426,6 @@ void Graph::ComputeTopoTable()
         vertex_list.push_back(p_source);
         vertex_list.push_back(p_sink);
         m_vPathTable.push_back(new BasePath(vertex_list, 0));
-
         vector<int> ASPath;
         ASPath.push_back(m_graphID);
         m_TopoTable.Insert(TopoTableEntry(p_source,p_sink,p_source,0, max_BW, ASPath));
@@ -1435,6 +1445,7 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
   if (entry.m_source == entry.m_next)
   {
     cout << "wrong happen in Graph::UpdateTopoTable" << endl;
+    return false;
   }
 
   vector<TopoTableEntry>::iterator it_max_Entry = m_TopoTable.m_vEntry.begin();

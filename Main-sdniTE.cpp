@@ -523,6 +523,7 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
    * exchange advertised topology table until all ASes' topology tables are stable
    */
   int timeStamp;
+  int totalMsgExchange = 0;
   for (timeStamp = 0; timeStamp < 1000000; timeStamp++)
   {
     bool notStable = false;
@@ -566,15 +567,6 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                   cout << "(" << (*it_border)->getGraphID() << "," << (*it_border)->getID() << ")-->"
                        << "(" << (*it_peer)->getGraphID() << "," << (*it_peer)->getID() << ")" << endl;
 
-                  /*
-                  //---------debug------------
-                  if ((*it_border)->getGraphID() == 17 && (*it_border)->getID() == 15)
-                  {
-                  	cout << "debug here" << endl;
-                  }
-                  //------------------------------
-                   */
-
                   for (vector<TopoTableEntry>::iterator it_topoEntry = (*it_AS)->m_AdvertisedTopoTable.m_vEntry.begin();
                        it_topoEntry != (*it_AS)->m_AdvertisedTopoTable.m_vEntry.end(); ++it_topoEntry)
                   {
@@ -597,21 +589,8 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                         continue;
                       }
                       bool localStable;
+                      totalMsgExchange += 1;
                       it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
-                      /*
-                      //-----------debug-----------------
-                      if ((*it_border)->getGraphID() == 17 && (*it_border)->getID() == 15)
-                      {
-                      	cout << "(" << it_topoEntry->m_source->getGraphID() << ", "<< it_topoEntry->m_source->getID() << ")-->"
-                      		<< "(" << it_topoEntry->m_sink->getGraphID() << ", "<< it_topoEntry->m_sink->getID() << ")"	<< endl;
-                      	if (it_topoEntry->m_sink->getGraphID() == 14 && it_topoEntry->m_sink->getID()==28)
-                      	{
-                      		cout << "debug here" << endl;
-                      	}
-                      }
-                      //-----------------------------------
-                       */
-
                       localStable = (*it)->UpdateTopoTable(TopoTableEntry(*it_border, it_topoEntry->m_sink, it_topoEntry->m_source,
                                                            it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
                                                            min(it_topoEntry->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),it_topoEntry->m_vASPath));
@@ -631,7 +610,7 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
       break;
     }
   }
-  cout << "time stamp = " << timeStamp << endl;
+  cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
 }
 
 void GenerateCommodity(vector<Graph*> ASes)

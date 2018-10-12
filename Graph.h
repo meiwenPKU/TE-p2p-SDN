@@ -104,6 +104,7 @@ public:
    * construct a virtual graph based on the topoTable
    */
   void ConstructVirtualGraph(Graph* graph, const string& AS_file);
+  void ConstructVirtualGraphNaive(Graph* graph, const string& AS_file);
 
   /*
    * construct a global view of the entire network
@@ -127,12 +128,10 @@ public:
    */
   void get_original_id(int newNodeID, int& oriNodeID, int& oriGraphID);
 
-
+  void printGraph();
   void printTopoTable();
-
   void printAdvertisedTable();
   void printTableEntry(TopoTableEntry& entry);
-
   void printPath(const BasePath* path);
 
   /*
@@ -168,6 +167,7 @@ public:
    * \return return true if the topotable is updated, otherwise return false
    */
   bool UpdateTopoTable(TopoTableEntry element);
+  bool UpdateTopoTableNaive(TopoTableEntry element);
 
   /*
    * Compute the advertised table according to the topology table during initializing the AS based on the following way:
