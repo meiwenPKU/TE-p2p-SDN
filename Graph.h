@@ -54,6 +54,7 @@ public: // members
 
   //hemin yang
   vector<BaseVertex*> m_vtBorderVertices;
+  map<pair<BaseVertex*, BaseVertex*>, pair<double, double>> m_BorderEdges; // m_BorderEdges[<src, sink>]=<bw, cost>
   TopoTable m_TopoTable;  // store the information from the border switch to all the other switches in the whole network
   TopoTable m_AdvertisedTopoTable;
   vector<BasePath*> m_vPathTable; // the k shortest pathes from each vertex in the AS to all the other vertex
@@ -104,7 +105,6 @@ public:
    * construct a virtual graph based on the topoTable
    */
   void ConstructVirtualGraph(Graph* graph, const string& AS_file);
-  void ConstructVirtualGraphNaive(Graph* graph, const string& AS_file);
 
   /*
    * construct a global view of the entire network
@@ -115,6 +115,7 @@ public:
   ~Graph(void);
 
   void clear();
+  void clearCommodities();
 
   //----hemin------
   int get_vertex_num();

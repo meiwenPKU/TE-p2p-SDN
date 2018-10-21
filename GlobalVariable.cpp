@@ -8,8 +8,8 @@
 
 
 const double NOPATH = -10;
-const int N_AS = 3 ; // the number of AS's in the topology
-const int kPath = 3; // the maximum paths between a source and a sink in a topology table
+const int N_AS = 10 ; // the number of AS's in the topology
+const int kPath = 5; // the maximum paths between a source and a sink in a topology table
 const int kK = 3; //k shortest paths used to initialize topo table
 const int kMaxComputePath = 3;
 double prob_generate_traffic = 0.5; // the prob of a node generating traffic

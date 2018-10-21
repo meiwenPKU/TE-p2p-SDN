@@ -28,7 +28,6 @@
 using namespace std;
 
 
-
 struct setcomp
 {
   bool operator()(const pair<BasePath,double>& lhs, const pair<BasePath,double>& rhs)const
@@ -72,11 +71,6 @@ void testYenAlg(Graph& my_graph)
     ++i;
     yenAlg.next()->PrintOut(cout);
   }
-
-// 	System.out.println("Result # :"+i);
-// 	System.out.println("Candidate # :"+yenAlg.get_cadidate_size());
-// 	System.out.println("All generated : "+yenAlg.get_generated_path_size());
-
 }
 
 int Graph::Graph_ID = 0;
@@ -527,18 +521,17 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
         for ( Inter_AS = InterAS.begin(); Inter_AS != InterAS.end(); ++Inter_AS)
         {
           set<BaseVertex*> vertex_set;
-          if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID() ||
-              ((*Inter_AS)->m_right->get_graphID()) == (*it)->get_graphID())
+          if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID())
           {
-            int neighborASid; // this is the neighboring AS
-            if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID())
-            {
-              neighborASid = (*Inter_AS)->m_right->get_graphID();
-            }
-            else
-            {
-              neighborASid = (*Inter_AS)->m_left->get_graphID();
-            }
+            int neighborASid = (*Inter_AS)->m_right->get_graphID(); // this is the neighboring AS
+            // if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID())
+            // {
+            //   neighborASid = (*Inter_AS)->m_right->get_graphID();
+            // }
+            // else
+            // {
+            //   neighborASid = (*Inter_AS)->m_left->get_graphID();
+            // }
 
             (*Inter_AS)->get_out_vertices(*it_border,vertex_set);
             if (vertex_set.size() == 0)
@@ -557,29 +550,54 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                   {
                     if (it_topoEntry->m_isExchanged.find((*it)->get_graphID()) != it_topoEntry->m_isExchanged.end())
                       continue;
-                    if (it_topoEntry->m_source == (*it_peer))
-                    {
-                      bool isCycle = false;
-                      for (vector<int>::iterator it_as = it_topoEntry->m_vASPath.begin();
-                           it_as != it_topoEntry->m_vASPath.end(); ++it_as)
-                      {
-                        if (*it_as == (*it)->get_graphID())
-                        {
-                          isCycle = true;
-                          break;
+                    // // If there is a path from (*it_peer) to it_topoEntry->m_source, then need to advertise this topo table entry
+                    // bool isReachable = false;
+                    // for (auto it_tmp = (*it_AS)->m_TopoTable.m_vEntry.begin(); it_tmp != (*it_AS)->m_TopoTable.m_vEntry.end(); ++it_tmp){
+                    //   if (it_tmp->m_source == (*it_peer) && it_tmp->m_sink == it_topoEntry->m_source){
+                    //     isReachable = true;
+                    //     break;
+                    //   }
+                    // }
+                    // if the path is an interior-AS path
+                    if (it_topoEntry->m_source == it_topoEntry->m_next){
+                      if (it_topoEntry->m_source == (*it_peer)) {
+                        bool localStable;
+                        totalMsgExchange += 1;
+                        it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
+                        localStable = (*it)->UpdateTopoTableNaive(TopoTableEntry(*it_border, it_topoEntry->m_sink, (*it_peer),
+                                                             it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
+                                                             min(it_topoEntry->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),it_topoEntry->m_vASPath));
+                        notStable = localStable || notStable;
+                      }
+                    } else {
+                      // if there is a path from (*it_peer) to it_topoEntry->m_source, then need to do the advertisement
+                      for (auto it_intermediate = (*it_AS)->m_TopoTable.m_vEntry.begin(); it_intermediate != (*it_AS)->m_TopoTable.m_vEntry.end(); ++it_intermediate){
+                        // TODO here we only consider the intermediate path should be a interior-AS path, i.e, the AS path only contains one AS number
+                        if (it_intermediate->m_source == (*it_peer) && it_intermediate->m_sink == it_topoEntry->m_source && it_intermediate->m_vASPath.size()==1){
+                          // decide whether this merged path includes a possible domain loop
+                          bool isCycle = false;
+                          for (vector<int>::iterator it_as = it_topoEntry->m_vASPath.begin();
+                               it_as != it_topoEntry->m_vASPath.end(); ++it_as)
+                          {
+                            if (*it_as == (*it)->get_graphID())
+                            {
+                              isCycle = true;
+                              break;
+                            }
+                          }
+                          if (isCycle)
+                          {
+                            continue;
+                          }
+                          bool localStable;
+                          totalMsgExchange += 1;
+                          it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
+                          localStable = (*it)->UpdateTopoTableNaive(TopoTableEntry(*it_border, it_topoEntry->m_sink, (*it_peer),
+                                                               it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer)+it_intermediate->m_weight,
+                                                               min(min(it_topoEntry->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)), it_intermediate->m_BW),it_topoEntry->m_vASPath));
+                          notStable = localStable || notStable;
                         }
                       }
-                      if (isCycle)
-                      {
-                        continue;
-                      }
-                      bool localStable;
-                      totalMsgExchange += 1;
-                      it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
-                      localStable = (*it)->UpdateTopoTableNaive(TopoTableEntry(*it_border, it_topoEntry->m_sink, it_topoEntry->m_source,
-                                                           it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
-                                                           min(it_topoEntry->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),it_topoEntry->m_vASPath));
-                      notStable = localStable || notStable;
                     }
                   }
                 }
@@ -604,6 +622,7 @@ void GenerateCommodity(vector<Graph*> ASes)
   cout << "commodities: source node --> sink node: demand" << endl;
   if (GenerateMethod == 0)
   {
+    // this method is to generate explicit commodities such that debugging can be simplified
     int s_AS_id, s_node_id, d_AS_id, d_node_id;
     double demand;
     //----commodity 1-----
@@ -656,6 +675,7 @@ void GenerateCommodity(vector<Graph*> ASes)
   }
   else
   {
+    // generate random commodities
     srand(0);
     vector<Commodity*> v_commodity;
     for (int i=0; i < N_AS; i++)
@@ -726,7 +746,7 @@ int main(...)
 {
   //--------create the topology-----------------
   vector<Graph*> ASes;
-  string file_name = "data/test_2";
+  string file_name = "data/test_6Degree10AS_undirected";
 
   for (int i = 0; i < N_AS; i++)
   {
@@ -738,7 +758,7 @@ int main(...)
 
   for (vector<Graph*>::iterator itl = ASes.begin(); itl != ASes.end(); ++itl)
   {
-    for (vector<Graph*>::iterator itr = itl + 1; itr != ASes.end(); ++itr)
+    for (vector<Graph*>::iterator itr = ASes.begin(); itr != ASes.end(); ++itr)
     {
       InterGraph* temp = new InterGraph((*itl),(*itr),file_name);
       if (temp->m_nVertexNum != 0)
@@ -756,18 +776,21 @@ int main(...)
    * 2. the weight and bandwidth of the new edge equal to the corresponding item in the topology table
    */
   vector<Graph*> VirtualAS;
+  int numEntries = 0;
   for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
   {
     Graph* temp = new Graph();
-    cout << "The topo table of AS " << (*it)->get_graphID() << endl;
-    (*it)->printTopoTable();
+    numEntries += (*it)->m_TopoTable.m_nEntry;
+    //cout << "The topo table of AS " << (*it)->get_graphID() << endl;
+    //(*it)->printTopoTable();
     (*it)->ConstructVirtualGraph(temp,file_name);
-    cout << "The built AS " << (*it)->get_graphID() << endl;
-    temp->printGraph();
+    //cout << "The built AS " << (*it)->get_graphID() << endl;
+    //temp->printGraph();
     VirtualAS.push_back(temp);
   }
+  cout << "number of topotable entries = " << numEntries << endl;
 
-  //
+
   // ofstream result;
   // result.open("commodityTrace.txt");
   // int time = 0;
@@ -838,9 +861,6 @@ int main(...)
   //     {
   //       Max_Throughput_TE(VirtualAS[index], Allocation);
   //     }
-  //
-  //
-  //
   //
   //     /*
   //      * print out the allocation results

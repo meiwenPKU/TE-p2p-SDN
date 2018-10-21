@@ -88,198 +88,6 @@ void Graph::ConstructGlobalView(Graph* graph, const string& AS_file)
   ifs.close();
 }
 
-void Graph::ConstructVirtualGraphNaive(Graph* graph,const string& AS_file)
-{
-  graph->set_graphID(this->get_graphID());
-  // count the number of the vertices
-  int numVertices = this->get_vertex_num();
-  set<BaseVertex*> s_outVertices;
-  for (vector<TopoTableEntry>::iterator it = m_TopoTable.m_vEntry.begin();
-       it != m_TopoTable.m_vEntry.end(); ++it)
-  {
-    if (it->m_sink->getGraphID() != this->get_graphID())
-    {
-      s_outVertices.insert(it->m_next);
-      s_outVertices.insert(it->m_sink);
-    }
-  }
-  numVertices += s_outVertices.size();
-  graph->set_vertex_num(numVertices);
-
-  const char* file_name = AS_file.c_str();
-  ifstream ifs(file_name);
-  if (!ifs)
-  {
-    cerr << "The file " << file_name << " can not be opened!" << endl;
-    exit(1);
-  }
-
-  int num_AS, num_Nodes;
-  ifs >> num_AS >> num_Nodes;
-
-  if (num_Nodes != this->get_vertex_num())
-  {
-    cout << "wrong in Graph::ConstructVirtualGraph(): unmatched vertex number" << endl;
-  }
-
-  /*
-   * read the files for constructing the ASes
-   */
-  int start_vertex, end_vertex, start_AS, end_AS;
-  double edge_weight, edge_BW;
-  int graphID = this->get_graphID();
-  int nodeID = 0;
-  while (ifs >> start_vertex)
-  {
-    ifs >> end_vertex >> edge_weight >> edge_BW >> start_AS >> end_AS;
-    edge_BW *= multiplier;
-    start_vertex = start_vertex - num_Nodes * start_AS;
-    end_vertex = end_vertex - num_Nodes * end_AS;
-
-    if (start_AS != graphID || end_AS != graphID)
-      continue;
-
-    int start_ori_id = start_vertex + graphID * max_Nodes;
-    if (graph->mpNodeID.find(start_ori_id) == graph->mpNodeID.end())
-    {
-      graph->mpNodeID.insert(pair<int,int>(start_ori_id,nodeID));
-      //cout << start_vertex << " " << graphID << " " << nodeID << endl;
-      nodeID++;
-    }
-
-    int end_ori_id = end_vertex + graphID * max_Nodes;
-    if (graph->mpNodeID.find(end_ori_id) == graph->mpNodeID.end())
-    {
-      graph->mpNodeID.insert(pair<int,int>(end_ori_id,nodeID));
-      nodeID++;
-    }
-
-    ///3.2.1 construct the vertices
-    BaseVertex* start_vertex_pt = graph->get_vertex(graph->mpNodeID.at(start_ori_id),graphID);
-    BaseVertex* end_vertex_pt = graph->get_vertex(graph->mpNodeID.at(end_ori_id),graphID);
-
-    int edgeCode = graph->get_edge_code(start_vertex_pt, end_vertex_pt);
-
-    graph->m_mpEdgeCodeWeight[edgeCode] = edge_weight;
-    graph->m_mpEdgeCodeBW[edgeCode] = edge_BW;
-    graph->m_mpEdgeCodeUsedBW[edgeCode] = 0;
-    set<Commodity*>* p_commodity = new set<Commodity*>();
-    graph->m_mpEdgeCodeCommodity[edgeCode] = p_commodity;
-
-    ///3.2.3 update the fan-in or fan-out variables
-    //// Fan-in
-    graph->get_vertex_set_pt(end_vertex_pt, graph->m_mpFaninVertices)->insert(start_vertex_pt);
-
-    //// Fan-out
-    graph->get_vertex_set_pt(start_vertex_pt, graph->m_mpFanoutVertices)->insert(end_vertex_pt);
-
-  }
-  ifs.close();
-  // build the links to the nodes in other ASes
-  for (vector<TopoTableEntry>::iterator it_topo = m_TopoTable.m_vEntry.begin();
-       it_topo != m_TopoTable.m_vEntry.end(); ++it_topo)
-  {
-    if (it_topo->m_sink->getGraphID() != this->get_graphID())
-    {
-      int start_vertex, end_vertex, start_AS, end_AS;
-      double edge_weight, edge_BW;
-      if (it_topo->m_source != it_topo->m_next)
-      {
-        start_vertex = it_topo->m_source->getID();
-        end_vertex = it_topo->m_next->getID();
-        start_AS = it_topo->m_source->getGraphID();
-        end_AS = it_topo->m_next->getGraphID();
-
-        for (vector<TopoTableEntry>::iterator it_topo1 = m_TopoTable.m_vEntry.begin();
-             it_topo1 != m_TopoTable.m_vEntry.end(); ++it_topo1)
-        {
-          if (it_topo1->m_source == it_topo->m_source &&
-              it_topo1->m_next == it_topo1->m_sink &&
-              it_topo1->m_sink == it_topo->m_next)
-          {
-            edge_weight = it_topo1->m_weight;
-            edge_BW = it_topo1->m_BW;
-            break;
-          }
-        }
-        int end_ori_id = end_vertex + end_AS * max_Nodes;
-        if (graph->mpNodeID.find(end_ori_id) == graph->mpNodeID.end())
-        {
-          graph->mpNodeID.insert(pair<int,int>(end_ori_id,nodeID));
-          nodeID++;
-        }
-
-        ///3.1 construct the vertices
-        BaseVertex* start_vertex_pt = graph->get_vertex(graph->mpNodeID.at(start_vertex+start_AS * max_Nodes),start_AS);
-        BaseVertex* end_vertex_pt = graph->get_vertex(graph->mpNodeID.at(end_vertex+end_AS * max_Nodes),end_AS);
-
-
-        ///3.2 add the edge weight
-        //// note that the duplicate edge would overwrite the one occurring before.
-        int edgeCode = graph->get_edge_code(start_vertex_pt, end_vertex_pt);
-        // debug
-        if (graph->m_mpEdgeCodeBW.find(edgeCode) != graph->m_mpEdgeCodeBW.end() && graph->m_mpEdgeCodeBW[edgeCode] != edge_BW){
-          cout << "wrong in Graph::ConstructVirtualGraphNaive(): multiple links between two nodes" << endl;
-        }
-        graph->m_mpEdgeCodeWeight[edgeCode] = edge_weight;
-        graph->m_mpEdgeCodeBW[edgeCode] = edge_BW;
-        graph->m_mpEdgeCodeUsedBW[edgeCode] = 0;
-        set<Commodity*>* p_commodity = new set<Commodity*>();
-        graph->m_mpEdgeCodeCommodity[edgeCode] = p_commodity;
-        ///3.3 update the fan-in or fan-out variables
-        //// Fan-in
-        graph->get_vertex_set_pt(end_vertex_pt, graph->m_mpFaninVertices)->insert(start_vertex_pt);
-        //// Fan-out
-        graph->get_vertex_set_pt(start_vertex_pt, graph->m_mpFanoutVertices)->insert(end_vertex_pt);
-      }
-      if (it_topo->m_next != it_topo->m_sink)
-      {
-        start_vertex = it_topo->m_next->getID();
-        end_vertex = it_topo->m_sink->getID();
-        start_AS = it_topo->m_next->getGraphID();
-        end_AS = it_topo->m_sink->getGraphID();
-
-        edge_weight = it_topo->m_weight - edge_weight;
-        edge_BW = min (it_topo->m_BW,edge_BW);
-
-        int end_ori_id = end_vertex + end_AS * max_Nodes;
-        if (graph->mpNodeID.find(end_ori_id) == graph->mpNodeID.end())
-        {
-          graph->mpNodeID.insert(pair<int,int>(end_ori_id,nodeID));
-          nodeID++;
-        }
-
-        ///3.1 construct the vertices
-        BaseVertex* start_vertex_pt = graph->get_vertex(graph->mpNodeID.at(start_vertex+start_AS * max_Nodes),start_AS);
-        BaseVertex* end_vertex_pt = graph->get_vertex(graph->mpNodeID.at(end_vertex+end_AS * max_Nodes),end_AS);
-
-
-        ///3.2 add the edge weight
-        //// note that when there are multiple edges between two nodes, say (w1, b1), (w2, b2), ..., (wn, bn)
-        //// then the aggregated edge will be (max(w1, w2, ..., wn), b1+b2+...+bn)
-        int edgeCode = graph->get_edge_code(start_vertex_pt, end_vertex_pt);
-        if (graph->m_mpEdgeCodeBW.find(edgeCode) == graph->m_mpEdgeCodeBW.end()){
-          graph->m_mpEdgeCodeWeight[edgeCode] = edge_weight;
-          graph->m_mpEdgeCodeBW[edgeCode] = edge_BW;
-          graph->m_mpEdgeCodeUsedBW[edgeCode] = 0;
-          set<Commodity*>* p_commodity = new set<Commodity*>();
-          graph->m_mpEdgeCodeCommodity[edgeCode] = p_commodity;
-        } else {
-          graph->m_mpEdgeCodeWeight[edgeCode] = graph->m_mpEdgeCodeWeight[edgeCode] > edge_weight ? graph->m_mpEdgeCodeWeight[edgeCode] : edge_weight;
-          graph->m_mpEdgeCodeBW[edgeCode] += edge_BW;
-        }
-
-        ///3.3 update the fan-in or fan-out variables
-        //// Fan-in
-        graph->get_vertex_set_pt(end_vertex_pt, graph->m_mpFaninVertices)->insert(start_vertex_pt);
-        //// Fan-out
-        graph->get_vertex_set_pt(start_vertex_pt, graph->m_mpFanoutVertices)->insert(end_vertex_pt);
-      }
-    }
-  }
-  graph->m_nEdgeNum = graph->m_mpEdgeCodeWeight.size();
-}
-
 void Graph::ConstructVirtualGraph(Graph* graph,const string& AS_file)
 {
   graph->set_graphID(this->get_graphID());
@@ -312,6 +120,7 @@ void Graph::ConstructVirtualGraph(Graph* graph,const string& AS_file)
   if (num_Nodes != this->get_vertex_num())
   {
     cout << "wrong in Graph::ConstructVirtualGraph(): unmatched vertex number" << endl;
+    exit(1);
   }
 
   /*
@@ -448,16 +257,22 @@ void Graph::ConstructVirtualGraph(Graph* graph,const string& AS_file)
         ///3.2 add the edge weight
         //// note that the duplicate edge would overwrite the one occurring before.
         int edgeCode = graph->get_edge_code(start_vertex_pt, end_vertex_pt);
-        graph->m_mpEdgeCodeWeight[edgeCode] = edge_weight;
-        graph->m_mpEdgeCodeBW[edgeCode] = edge_BW;
-        graph->m_mpEdgeCodeUsedBW[edgeCode] = 0;
-        set<Commodity*>* p_commodity = new set<Commodity*>();
-        graph->m_mpEdgeCodeCommodity[edgeCode] = p_commodity;
-        ///3.3 update the fan-in or fan-out variables
-        //// Fan-in
-        graph->get_vertex_set_pt(end_vertex_pt, graph->m_mpFaninVertices)->insert(start_vertex_pt);
-        //// Fan-out
-        graph->get_vertex_set_pt(start_vertex_pt, graph->m_mpFanoutVertices)->insert(end_vertex_pt);
+        if (graph->m_mpEdgeCodeBW.find(edgeCode) != graph->m_mpEdgeCodeBW.end()){
+          graph->m_mpEdgeCodeWeight[edgeCode] = (graph->m_mpEdgeCodeWeight[edgeCode])*(graph->m_mpEdgeCodeBW[edgeCode])+edge_weight*edge_BW;
+          graph->m_mpEdgeCodeBW[edgeCode] += edge_BW;
+          graph->m_mpEdgeCodeWeight[edgeCode] /= graph->m_mpEdgeCodeBW[edgeCode];
+        } else {
+          graph->m_mpEdgeCodeWeight[edgeCode] = edge_weight;
+          graph->m_mpEdgeCodeBW[edgeCode] = edge_BW;
+          graph->m_mpEdgeCodeUsedBW[edgeCode] = 0;
+          set<Commodity*>* p_commodity = new set<Commodity*>();
+          graph->m_mpEdgeCodeCommodity[edgeCode] = p_commodity;
+          ///3.3 update the fan-in or fan-out variables
+          //// Fan-in
+          graph->get_vertex_set_pt(end_vertex_pt, graph->m_mpFaninVertices)->insert(start_vertex_pt);
+          //// Fan-out
+          graph->get_vertex_set_pt(start_vertex_pt, graph->m_mpFanoutVertices)->insert(end_vertex_pt);
+        }
       }
     }
   }
@@ -471,6 +286,10 @@ InterGraph::InterGraph(Graph* left_graph, Graph* right_graph, const string& inpu
   const char* file_name = input_file_name.c_str();
   m_left = left_graph;
   m_right = right_graph;
+  // if the two ASes have the same graphID, no need to build the interAS
+  if (m_left->get_graphID() == m_right->get_graphID()){
+    return;
+  }
 
   //1. Check the validity of the file
   ifstream ifs(file_name);
@@ -503,8 +322,7 @@ InterGraph::InterGraph(Graph* left_graph, Graph* right_graph, const string& inpu
     end_vertex = end_vertex - num_Nodes * end_AS;
 
 
-    if (!((m_left->get_graphID() == start_AS && m_right->get_graphID() == end_AS)
-          || (m_left->get_graphID() == end_AS && m_right->get_graphID() == start_AS)))
+    if (!(m_left->get_graphID() == start_AS && m_right->get_graphID() == end_AS))
     {
       continue;
     }
@@ -524,6 +342,7 @@ InterGraph::InterGraph(Graph* left_graph, Graph* right_graph, const string& inpu
       {
         m_right->m_vtBorderVertices.push_back(end_vertex_pt);
       }
+      m_left->m_BorderEdges[pair<BaseVertex*, BaseVertex*>(start_vertex_pt, end_vertex_pt)] = pair<double, double>(edge_weight, edge_BW);
     }
     else
     {
@@ -538,6 +357,7 @@ InterGraph::InterGraph(Graph* left_graph, Graph* right_graph, const string& inpu
       {
         m_right->m_vtBorderVertices.push_back(start_vertex_pt);
       }
+      m_right->m_BorderEdges[pair<BaseVertex*, BaseVertex*>(start_vertex_pt, end_vertex_pt)] = pair<double, double>(edge_weight, edge_BW);
     }
 
     m_mpVertexIndex[start_vertex_pt->getGraphID()*max_Nodes + start_vertex_pt->getID()] = start_vertex_pt;
@@ -636,6 +456,7 @@ Graph::Graph(const string& file_name, bool buildEntireNetwork)
     {
       cout << "wrong happened: vertex number does not match. The right number should be "
            << m_nVertexNum << ", but gets "<< m_vtVertices.size() << endl;
+      exit(1);
     }
     ifs.close();
   }
@@ -759,6 +580,7 @@ void Graph::_import_from_file( const string& input_file_name )
   if (m_vtVertices.size() != m_nVertexNum)
   {
     cout << "wrong happened: vertex number does not match" << endl;
+    exit(1);
   }
   ifs.close();
 }
@@ -910,6 +732,11 @@ void Graph::clear()
   m_stRemovedEdge.clear();
 }
 
+void Graph::clearCommodities(){
+  for_each(m_vCommodity.begin(), m_vCommodity.end(), DeleteFunc<Commodity>());
+  m_vCommodity.clear();
+}
+
 void InterGraph::clear()
 {
   m_nEdgeNum = 0;
@@ -963,7 +790,7 @@ int InterGraph::get_edge_code( const BaseVertex* start_vertex_pt, const BaseVert
   else
   {
     cout << "wrong happened in InterGraph::get_edge_code, graph id does not match" << endl;
-    return -1;
+    exit(1);
   }
   return start_vertex_pt->getID()*vertex_num+end_vertex_pt->getID();
 }
@@ -1445,7 +1272,7 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
   if (entry.m_source == entry.m_next)
   {
     cout << "wrong happen in Graph::UpdateTopoTable" << endl;
-    return false;
+    exit(1);
   }
 
   vector<TopoTableEntry>::iterator it_max_Entry = m_TopoTable.m_vEntry.begin();
@@ -1453,11 +1280,13 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
   for (vector<TopoTableEntry>::iterator it = m_TopoTable.m_vEntry.begin();
        it != m_TopoTable.m_vEntry.end(); ++it)
   {
-    if (it->m_source == entry.m_source && it->m_sink == entry.m_sink
-        && it->m_next == entry.m_next)
-    {
-      return false;
-    }
+    // TODO reconsider the case where the topo table contains multiple entries whose
+    //      source, sink, and next are exactly same
+    // if (it->m_source == entry.m_source && it->m_sink == entry.m_sink
+    //     && it->m_next == entry.m_next)
+    // {
+    //   return false;
+    // }
     if (it->m_source == entry.m_source && it->m_sink == entry.m_sink)
     {
       num_path ++;
@@ -1493,6 +1322,7 @@ bool Graph::UpdateTopoTable(TopoTableEntry entry)
   if (entry.m_source == entry.m_next)
   {
     cout << "wrong happen in Graph::UpdateTopoTable" << endl;
+    exit(1);
   }
 
   vector<TopoTableEntry>::iterator it_max_Entry = m_TopoTable.m_vEntry.begin();
@@ -1514,6 +1344,7 @@ bool Graph::UpdateTopoTable(TopoTableEntry entry)
       }
     }
   }
+
   if (num_path < m_TopoTable.m_nK)
   {
     entry.m_vASPath.push_back(m_graphID);
@@ -1625,27 +1456,12 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
           {
             for (int i = 0; i < (*it_path)->length(); ++i)
             {
-              bool isAppear = false;
-              for (map<BaseVertex*, int>::iterator it_vertex = vertexToIndex.begin();
-                   it_vertex != vertexToIndex.end(); ++it_vertex)
-              {
-                if (it_vertex->first == (*it_path)->GetVertex(i))
-                {
-                  isAppear = true;
-                  break;
-                }
-              }
-              if (!isAppear)
-              {
-                if (vertexToIndex.find((*it_path)->GetVertex(i)) == vertexToIndex.end())
-                {
-                  vertexToIndex[(*it_path)->GetVertex(i)] = numVertices;
-                  indexToVertex[numVertices] = (*it_path)->GetVertex(i);
-                  numVertices++;
-                }
+              if (vertexToIndex.find((*it_path)->GetVertex(i)) == vertexToIndex.end()){
+                vertexToIndex[(*it_path)->GetVertex(i)] = numVertices;
+                indexToVertex[numVertices] = (*it_path)->GetVertex(i);
+                numVertices++;
               }
             }
-            break;
           }
         }
       }
@@ -1653,27 +1469,13 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
       for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin();
            it_de != it_BorderToSink.end(); ++it_de)
       {
-        bool isAppear = false;
-        for (map<BaseVertex*, int>::iterator it_vertex = vertexToIndex.begin();
-             it_vertex != vertexToIndex.end(); ++it_vertex)
+        if (vertexToIndex.find((*(*it_de)).m_next) == vertexToIndex.end())
         {
-          if (it_vertex->first == (*(*it_de)).m_next)
-          {
-            isAppear = true;
-            break;
-          }
-        }
-        if (!isAppear)
-        {
-          if (vertexToIndex.find((*(*it_de)).m_next) == vertexToIndex.end())
-          {
-            vertexToIndex[(*(*it_de)).m_next] = numVertices;
-            indexToVertex[numVertices] = (*(*it_de)).m_next;
-            numVertices++;
-          }
+          vertexToIndex[(*(*it_de)).m_next] = numVertices;
+          indexToVertex[numVertices] = (*(*it_de)).m_next;
+          numVertices++;
         }
       }
-
 
       if (vertexToIndex.find(entry.m_sink) == vertexToIndex.end())
       {
@@ -1718,7 +1520,6 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
               graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].cost =
                 get_edge_weight(p_source,p_sink);
             }
-            break;
           }
         }
       }
@@ -1726,26 +1527,22 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
       for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin();
            it_de != it_BorderToSink.end(); ++it_de)
       {
-        for (vector<TopoTableEntry>::iterator it_first = m_TopoTable.m_vEntry.begin();
-             it_first != m_TopoTable.m_vEntry.end(); ++it_first)
-        {
-          if (it_first->m_source == (*(*it_de)).m_source &&
-              it_first->m_sink == (*(*it_de)).m_next)
-          {
-            BaseVertex* p_source = it_first->m_source;
-            BaseVertex* p_sink = it_first->m_sink;
-            if (p_source == p_sink)
-              continue;
-            graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].capacity = it_first->m_BW;
-            graph[vertexToIndex.at(p_source)][vertexToIndex.at(p_sink)].cost = it_first->m_weight;
-
-            if (p_sink == entry.m_sink)
-              continue;
-            graph[vertexToIndex.at(p_sink)][vertexToIndex.at(entry.m_sink)].capacity = (*(*it_de)).m_BW;
-            graph[vertexToIndex.at(p_sink)][vertexToIndex.at(entry.m_sink)].cost = (*(*it_de)).m_weight - it_first->m_weight;
-
-          }
+        auto src = (*(*it_de)).m_source;
+        auto nxt = (*(*it_de)).m_next;
+        auto key = pair<BaseVertex*, BaseVertex*>(src, nxt);
+        if (m_BorderEdges.find(key) == m_BorderEdges.end()){
+          // cannot find the boarder edge, this is a wrong case
+          cout << "cannot find the boarder edge" << endl;
+          exit(1);
         }
+        auto edgeChar = m_BorderEdges.at(key);
+        graph[vertexToIndex.at(src)][vertexToIndex.at(nxt)].capacity = edgeChar.second;
+        graph[vertexToIndex.at(src)][vertexToIndex.at(nxt)].cost = edgeChar.first;
+        if (nxt == entry.m_sink){
+          continue;
+        }
+        graph[vertexToIndex.at(nxt)][vertexToIndex.at(entry.m_sink)].capacity = (*(*it_de)).m_BW;
+        graph[vertexToIndex.at(nxt)][vertexToIndex.at(entry.m_sink)].cost = (*(*it_de)).m_weight - edgeChar.first;
       }
 
       FordFulkersonAlg myAlg(graph, numVertices,
@@ -1770,8 +1567,20 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
 
 
       v_insertTopoEntry.push_back(TopoTableEntry(*it_border,entry.m_sink,NULL,max_cost,max_flow,v_ASpath));
-      //m_AdvertisedTopoTable.Insert(TopoTableEntry(*it_border,entry.m_sink,NULL,max_cost,max_flow,v_ASpath));
+      // // debug
+      // if (max_flow == 0){
+      //   for (int i = 0; i < numVertices; ++i)
+      //   {
+      //     for (int j = 0; j < numVertices; ++j)
+      //     {
+      //       cout << i << " -> " << j << ":" << graph[i][j].flow << ", " << graph[i][j].capacity << ", " << graph[i][j].cost << endl;
+      //     }
+      //   }
+      //   cout << "debug here";
+      // }
     }
+    // insert the entry into the advertise table
+    // the advertise table can only contain one entry for each source - sink pair
     for (vector<TopoTableEntry>::iterator it = v_insertTopoEntry.begin();
          it != v_insertTopoEntry.end(); ++it)
     {
@@ -1782,6 +1591,7 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
         {
           m_AdvertisedTopoTable.Delete(it_ad);
           m_AdvertisedTopoTable.Insert(*it);
+          break;
         }
       }
     }
@@ -1935,6 +1745,7 @@ void Graph::ComputeAdvertisedTable()
       else
       {
         cout << "wrong in Graph::ComputeAdvertisedTable(): the next and the source are in different ASes" << endl;
+        exit(1);
       }
     }
   }

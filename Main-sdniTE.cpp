@@ -533,24 +533,13 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
       for (vector<BaseVertex*>::iterator it_border = (*it)->m_vtBorderVertices.begin();
            it_border != (*it)->m_vtBorderVertices.end(); ++it_border) // border switch in the AS
       {
-
         vector<InterGraph*>::iterator Inter_AS;
         for ( Inter_AS = InterAS.begin(); Inter_AS != InterAS.end(); ++Inter_AS)
         {
           set<BaseVertex*> vertex_set;
-          if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID() ||
-              ((*Inter_AS)->m_right->get_graphID()) == (*it)->get_graphID())
+          if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID())
           {
-            int neighborASid; // this is the neighboring AS
-            if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID())
-            {
-              neighborASid = (*Inter_AS)->m_right->get_graphID();
-            }
-            else
-            {
-              neighborASid = (*Inter_AS)->m_left->get_graphID();
-            }
-
+            int neighborASid = (*Inter_AS)->m_right->get_graphID();; // this is the neighboring AS
             (*Inter_AS)->get_out_vertices(*it_border,vertex_set);
             if (vertex_set.size() == 0)
             {
@@ -564,9 +553,8 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                 for (set<BaseVertex*>::iterator it_peer = vertex_set.begin(); it_peer != vertex_set.end(); ++it_peer) // the peer switch of the border switch
                 {
                   //debug
-                  cout << "(" << (*it_border)->getGraphID() << "," << (*it_border)->getID() << ")-->"
-                       << "(" << (*it_peer)->getGraphID() << "," << (*it_peer)->getID() << ")" << endl;
-
+                  // cout << "(" << (*it_border)->getGraphID() << "," << (*it_border)->getID() << ")-->"
+                  //      << "(" << (*it_peer)->getGraphID() << "," << (*it_peer)->getID() << ")" << endl;
                   for (vector<TopoTableEntry>::iterator it_topoEntry = (*it_AS)->m_AdvertisedTopoTable.m_vEntry.begin();
                        it_topoEntry != (*it_AS)->m_AdvertisedTopoTable.m_vEntry.end(); ++it_topoEntry)
                   {
@@ -689,7 +677,7 @@ void GenerateCommodity(vector<Graph*> ASes)
             }
             double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
             demand *= loadC;
-	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),ASes[i]->get_vertex(desti,ASes[i]->get_graphID()),demand);
+	          Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),ASes[i]->get_vertex(desti,ASes[i]->get_graphID()),demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
             v_commodity.push_back(pt_commodity);
             cout << "(" << i << ", " << j << ") --> (" << i << ", " << desti << "): " << demand << endl;
@@ -705,7 +693,7 @@ void GenerateCommodity(vector<Graph*> ASes)
             int desti = rand()%(ASes[desti_AS]->get_vertex_num());
             double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
             demand *= loadC;
-	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),
+	          Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),
                                                     ASes[desti_AS]->get_vertex(desti,ASes[desti_AS]->get_graphID()),demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
             v_commodity.push_back(pt_commodity);
@@ -741,7 +729,7 @@ int main(...)
 {
   //--------create the topology-----------------
   vector<Graph*> ASes;
-  string file_name = "data/test_6Degree10AS";
+  string file_name = "data/test_6Degree10AS_undirected";
 
   for (int i = 0; i < N_AS; i++)
   {
@@ -753,7 +741,7 @@ int main(...)
 
   for (vector<Graph*>::iterator itl = ASes.begin(); itl != ASes.end(); ++itl)
   {
-    for (vector<Graph*>::iterator itr = itl + 1; itr != ASes.end(); ++itr)
+    for (vector<Graph*>::iterator itr = ASes.begin(); itr != ASes.end(); ++itr)
     {
       InterGraph* temp = new InterGraph((*itl),(*itr),file_name);
       if (temp->m_nVertexNum != 0)
@@ -762,8 +750,6 @@ int main(...)
       }
     }
   }
-  cout << InterASes[0]->m_nVertexNum << endl;
-
   SDNi_TE(ASes,InterASes);
 
   /*
@@ -772,12 +758,22 @@ int main(...)
    * 2. the weight and bandwidth of the new edge equal to the corresponding item in the topology table
    */
   vector<Graph*> VirtualAS;
+  int numTopoEntries = 0;
+  int numAdvEntries = 0;
   for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
   {
     Graph* temp = new Graph();
+    //cout << "The topo table of AS " << (*it)->get_graphID() << endl;
+    //(*it)->printTopoTable();
+    numTopoEntries += (*it)->m_TopoTable.m_nEntry;
+    numAdvEntries += (*it)->m_AdvertisedTopoTable.m_nEntry;
+    //(*it)->printAdvertisedTable();
     (*it)->ConstructVirtualGraph(temp,file_name);
+    //cout << "The built AS " << (*it)->get_graphID() << endl;
+    //temp->printGraph();
     VirtualAS.push_back(temp);
   }
+  cout << "number of topotable entries = " << numTopoEntries << ", number of AdvertisedTable = " << numAdvEntries << endl;
 
 
   ofstream result;
@@ -801,7 +797,7 @@ int main(...)
       /*
        * initialize the network
        */
-      VirtualAS[index]->m_vCommodity.clear();
+      VirtualAS[index]->clearCommodities();
       for (map<int,double>::iterator it_used = VirtualAS[index]->m_mpEdgeCodeUsedBW.begin();
            it_used != VirtualAS[index]->m_mpEdgeCodeUsedBW.end(); ++it_used)
       {
@@ -840,8 +836,8 @@ int main(...)
       }
       cout << "The total send feasible throughput = " << totalSendThr << endl;
       //Google_TE_Optimization(VirtualAS[index], Allocation);
-      //Max_Throughput_TE(VirtualAS[index], Allocation);
-
+      Max_Throughput_TE(VirtualAS[index], Allocation);
+      /*
       if (rand()%101/100.0 < prob_Google)
       {
         Google_TE_Optimization(VirtualAS[index], Allocation);
@@ -850,9 +846,7 @@ int main(...)
       {
         Max_Throughput_TE(VirtualAS[index], Allocation);
       }
-
-
-
+      */
 
       /*
        * print out the allocation results
@@ -861,7 +855,6 @@ int main(...)
            it_com != Allocation->end(); ++it_com)
       {
         it_com->first->Print(result);
-        //debug
         double totalAllocated = 0;
         for (set<pair<BasePath,double>,setcomp>::iterator it_set = it_com->second.begin();
              it_set != it_com->second.end(); ++ it_set)
@@ -984,10 +977,15 @@ int main(...)
         cout << "---------------------------------------" << endl;
       }
     }
+    // clear the memory allocation
+    for (auto it = v_Allocation.begin(); it != v_Allocation.end(); ++it){
+      delete *it;
+    }
+
     for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
     {
       // clear the commodities in each AS
-      (*it)->m_vCommodity.clear();
+      (*it)->clearCommodities();
       int index = it - ASes.begin();
       for (vector<Commodity*>::iterator it_c = NewCommodity[index].begin();
            it_c != NewCommodity[index].end(); ++it_c)
@@ -995,6 +993,16 @@ int main(...)
         (*it)->m_vCommodity.push_back(*it_c);
       }
     }
+  }
+  // clear the memory for graphs
+  for (auto g = ASes.begin(); g != ASes.end(); ++g){
+    (*g)->clear();
+  }
+  for (auto g = InterASes.begin(); g != InterASes.end(); ++g){
+    (*g)->clear();
+  }
+  for (auto g = VirtualAS.begin(); g != VirtualAS.end(); ++g){
+    (*g)->clear();
   }
   result.close();
 }

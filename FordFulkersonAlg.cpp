@@ -48,6 +48,7 @@ bool FordFulkersonAlg::bfs(int parent[])
 void FordFulkersonAlg::MaxFlow(double& max_flow, double& cost)
 {
     int u, v;
+    cost = 0;
 
     // Create a residual graph and fill the residual graph with
     // given capacities in the original graph as residual capacities
@@ -73,49 +74,56 @@ void FordFulkersonAlg::MaxFlow(double& max_flow, double& cost)
 
         // update residual capacities of the edges and reverse edges
         // along the path
+        double pathCost = 0;
         for (v=m_Sink; v != m_Source; v=parent[v])
         {
             u = parent[v];
             m_Rgraph[u][v] -= path_flow;
             m_Rgraph[v][u] += path_flow;
+            pathCost += m_graph[u][v].cost;
         }
         // Add path flow to overall flow
         max_flow += path_flow;
+        cost += pathCost * path_flow;
     }
 
-    // compute the cost of the maximal flow
+    // update the flow on each edge
     for (u = 0; u < m_numVertices; ++u)
     {
     	for (v = 0; v < m_numVertices; ++v)
     	{
-    		if (m_Rgraph[u][v] > 0)
-    		{
-    			if (m_graph[u][v].capacity > 0 & m_graph[v][u].capacity <= 0)
-    			{
-    				m_graph[u][v].flow = m_graph[u][v].capacity - m_Rgraph[u][v];
-    			}
-    			else if (m_graph[u][v].capacity <= 0 & m_graph[v][u].capacity > 0)
-    			{
-    				m_graph[v][u].flow = m_Rgraph[u][v];
-
-    			}
-    			else if (m_graph[u][v].capacity > 0 & m_graph[v][u].capacity > 0)
-    			{
-            cout << "wrong: there are two reverse edges between two nodes" << endl;
-    			}
-    		}
+        if (m_graph[u][v].capacity > 0){
+          m_graph[u][v].flow = max(m_graph[u][v].capacity - m_Rgraph[u][v], 0.0);
+        }
+    		// if (m_Rgraph[u][v] > 0)
+    		// {
+    		// 	if (m_graph[u][v].capacity > 0 & m_graph[v][u].capacity <= 0)
+    		// 	{
+    		// 		m_graph[u][v].flow = m_graph[u][v].capacity - m_Rgraph[u][v];
+    		// 	}
+    		// 	else if (m_graph[u][v].capacity <= 0 & m_graph[v][u].capacity > 0)
+    		// 	{
+    		// 		m_graph[v][u].flow = m_Rgraph[u][v];
+    		// 	}
+    		// 	else if (m_graph[u][v].capacity > 0 & m_graph[v][u].capacity > 0)
+    		// 	{
+        //     cout << "wrong: there are two reverse edges between two nodes" << endl;
+        //     exit(1);
+    		// 	}
+    		// }
     	}
     }
-    cost = 0;
-    for (u = 0; u < m_numVertices; ++u)
-    {
-    	for (v = 0; v < m_numVertices; ++v)
-    	{
-    		if (m_graph[u][v].flow > 0)
-    		{
-    			cost += m_graph[u][v].flow * m_graph[u][v].cost;
-    		}
-    	}
-    }
+    // compute the cost of the max flow
+    // cost = 0;
+    // for (u = 0; u < m_numVertices; ++u)
+    // {
+    // 	for (v = 0; v < m_numVertices; ++v)
+    // 	{
+    // 		if (m_graph[u][v].flow > 0)
+    // 		{
+    // 			cost += m_graph[u][v].flow * m_graph[u][v].cost;
+    // 		}
+    // 	}
+    // }
     cost  = cost / max_flow;
 }
