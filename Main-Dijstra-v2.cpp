@@ -23,59 +23,8 @@
 //hemin
 #include "TopoTable.h"
 #include "GlobalVariable.h"
+#include "utility.h"
 using namespace std;
-
-
-
-struct setcomp
-{
-  bool operator()(const pair<BasePath,double>& lhs, const pair<BasePath,double>& rhs)const
-  {
-    if (lhs.first == rhs.first)
-    {
-      return false;
-    }
-    else
-    {
-      return true;
-    }
-  }
-};
-
-void testDijkstraGraph(Graph* my_graph_pt)
-{
-  DijkstraShortestPathAlg shortest_path_alg(my_graph_pt);
-  BasePath* result =
-    shortest_path_alg.get_shortest_path(
-      my_graph_pt->get_vertex(6,my_graph_pt->get_graphID()), my_graph_pt->get_vertex(3,my_graph_pt->get_graphID()));
-  result->PrintOut(cout);
-  result =
-    shortest_path_alg.get_shortest_path(
-      my_graph_pt->get_vertex(10,my_graph_pt->get_graphID()), my_graph_pt->get_vertex(5,my_graph_pt->get_graphID()));
-  result->PrintOut(cout);
-  result =
-    shortest_path_alg.get_shortest_path(
-      my_graph_pt->get_vertex(2,my_graph_pt->get_graphID()), my_graph_pt->get_vertex(0,my_graph_pt->get_graphID()));
-  result->PrintOut(cout);
-}
-
-void testYenAlg(Graph& my_graph)
-{
-  YenTopKShortestPathsAlg yenAlg(my_graph, my_graph.get_vertex(10,my_graph.get_graphID()),
-                                 my_graph.get_vertex(5,my_graph.get_graphID()));
-
-  int i=0;
-  while(yenAlg.has_next())
-  {
-    ++i;
-    yenAlg.next()->PrintOut(cout);
-  }
-
-// 	System.out.println("Result # :"+i);
-// 	System.out.println("Candidate # :"+yenAlg.get_cadidate_size());
-// 	System.out.println("All generated : "+yenAlg.get_generated_path_size());
-
-}
 
 int Graph::Graph_ID = 0;
 
@@ -83,24 +32,6 @@ int Graph::Graph_ID = 0;
  * select the value according to the prob distribution
  *
  */
-
-int SelectValue(vector<int>& value, vector<double>& prob_dist)
-{
-  double prob = (rand()%101)/100.0;
-  double sum = 0;
-  int index = 0;
-  for (vector<double>::iterator it = prob_dist.begin(); it != prob_dist.end(); ++it)
-  {
-    if (prob >= sum && prob <= sum+*it)
-    {
-      break;
-    }
-    sum += *it;
-    index++;
-  }
-  return index;
-}
-
 void Dijkstra(Graph* AS, map<Commodity*, set<pair<BasePath,double>, setcomp> >* Allocation)
 {
   DijkstraShortestPathAlg shortest_path_alg(AS);
@@ -196,128 +127,6 @@ void Dijkstra(Graph* AS, map<Commodity*, set<pair<BasePath,double>, setcomp> >* 
       Allocation->at(target_com).insert(pair<BasePath,double>(*shortest_path,extraAllocated));
     }
   }
-}
-
-
-void GenerateCommodity(vector<Graph*> ASes)
-{
-  int GenerateMethod = 1; // Generate specified commodity if 0, otherwise generate random commodities
-  cout << "commodities: source node --> sink node: demand" << endl;
-  if (GenerateMethod == 0)
-  {
-    int s_AS_id, s_node_id, d_AS_id, d_node_id;
-    double demand;
-    //----commodity 1-----
-    s_AS_id = 0;
-    s_node_id = 1;
-    d_AS_id = 1;
-    d_node_id = 0;
-    demand = 4;
-    Commodity* pt_commodity1 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
-        ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
-    ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity1);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
-
-
-    //----commodity 2-----
-    s_AS_id = 0;
-    s_node_id = 3;
-    d_AS_id = 1;
-    d_node_id = 1;
-    demand = 3;
-    Commodity* pt_commodity2 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
-        ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
-    ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity2);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
-
-
-    //----commodity 3-----
-    s_AS_id = 2;
-    s_node_id = 2;
-    d_AS_id = 1;
-    d_node_id = 3;
-    demand = 6;
-    Commodity* pt_commodity3 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
-        ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
-    ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity3);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
-
-
-    //----commodity 4-----
-    s_AS_id = 1;
-    s_node_id = 3;
-    d_AS_id = 1;
-    d_node_id = 0;
-    demand = 10;
-    Commodity* pt_commodity4 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
-        ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
-    ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity4);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
-
-  }
-  else
-  {
-    srand(0);
-    for (int i=0; i < N_AS; i++)
-    {
-      for (int j = 0; j < ASes[i]->get_vertex_num(); ++j)
-      {
-        if (rand()%101/100.0 < prob_generate_traffic)
-        {
-          if (rand()%101/100.0 < prob_within_AS)
-          {
-            //the destination is in the same AS
-            int desti = rand()%(ASes[i]->get_vertex_num());
-            while (desti == j)
-            {
-              desti = rand()%(ASes[i]->get_vertex_num());
-            }
-            double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
-            demand *= loadC;
-	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),ASes[i]->get_vertex(desti,ASes[i]->get_graphID()),demand);
-            ASes[i]->m_vCommodity.push_back(pt_commodity);
-            cout << "(" << i << ", " << j << ") --> (" << i << ", " << desti << "): " << demand << endl;
-          }
-          else
-          {
-            // the destination is in another AS
-            int desti_AS = rand()%N_AS;
-            while (desti_AS == i)
-            {
-              desti_AS = rand()%N_AS;
-            }
-            int desti = rand()%(ASes[desti_AS]->get_vertex_num());
-            double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
-            demand *= loadC;
-	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),
-                                                    ASes[desti_AS]->get_vertex(desti,ASes[desti_AS]->get_graphID()),demand);
-            ASes[i]->m_vCommodity.push_back(pt_commodity);
-            cout << "(" << i << ", " << j << ") --> (" << desti_AS << ", " << desti << "): " << demand << endl;
-          }
-        }
-      }
-    }
-  }
-}
-/*
- * map the vertex in the network to the vertex in one AS
- * if the graph is constructed based on several ASes,
- * this map is used to map the node in the AS to the node id of the constructed graph.
- * mpNodeID[graph_id*max_Nodes+vertex_id] = new vertex_id in the constructed graph
- */
-BaseVertex* NetworkToAS(Graph& network, vector<Graph*> ASes, BaseVertex* ori_vertex)
-{
-  for (map<int, int>::iterator it = network.mpNodeID.begin(); it != network.mpNodeID.end(); ++it)
-  {
-    if (it->second == ori_vertex->getID())
-    {
-      int vertexID = it->first % max_Nodes;
-      int graphID = (it->first - vertexID)/max_Nodes;
-      return ASes[graphID]->get_vertex(vertexID,graphID);
-    }
-  }
-  cout << "wrong: can not map the vertex in the network to the AS" << endl;
-  return NULL;
 }
 
 int main(...)
