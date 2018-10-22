@@ -26,6 +26,7 @@
 using namespace std;
 
 int Graph::Graph_ID = 0;
+int BasePath::counter = 0;
 
 void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
 {
@@ -129,6 +130,13 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
 
 int main(...)
 {
+  // // a simple test
+  // double oldvm, oldrss, newvm, newrss;
+  // int* a = new int [1000];
+  // //process_mem_usage(oldvm, oldrss);
+  // delete[] a;
+  // //process_mem_usage(newvm, newrss);
+  // cout << "release vm = " << newvm - oldvm << "; release rss = " << newrss - oldrss << endl;
   //--------create the topology-----------------
   vector<Graph*> ASes;
   string file_name = "data/test_6Degree10AS_undirected";
@@ -178,23 +186,33 @@ int main(...)
   cout << "number of topotable entries = " << numTopoEntries << ", number of AdvertisedTable = " << numAdvEntries << endl;
 
 
-  ofstream result;
-  result.open("commodityTrace.txt");
+  //ofstream result;
+  //result.open("commodityTrace.txt");
   int time = 0;
   int runTime = 30;
   double Throughput = 0;
   double Aver_cost = 0;
+  double vm, rss;
+  vector<map<Commodity*, set<pair<BasePath,double>,setcomp> > > v_Allocation;
   for (time = 0; time < runTime; time++)
   {
+    cout << "size of v_Allocation = " << sizeof(map<Commodity*, set<pair<BasePath,double>,setcomp> >) * v_Allocation.size() << endl;
+    v_Allocation.clear();
+    // get the memory footprint
+    //process_mem_usage(vm, rss);
+    //cout << "Before one iteratin, VM: " << vm << "; RSS: " << rss << endl;
     //generate commodities
     GenerateCommodity(ASes);
+    // get the memory footprint
+    //process_mem_usage(vm, rss);
+    //cout << "After generating commodities, VM: " << vm << "; RSS: " << rss << endl;
+
     cout << "time = " << time << endl;
     // each AS do the traffic engineering for its own commodities based on the topology
-    vector<map<Commodity*, set<pair<BasePath,double>,setcomp> >* > v_Allocation;
     double totalSendThr = 0;
     for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
     {
-      result << "AS " << (*it)->get_graphID() << "\n";
+      //result << "AS " << (*it)->get_graphID() << "\n";
       int index = it - ASes.begin();
       /*
        * initialize the network
@@ -206,7 +224,7 @@ int main(...)
         VirtualAS[index]->set_edge_UsedBW(it_used->first,0);
       }
 
-      map<Commodity*, set<pair<BasePath,double>,setcomp> >* Allocation = new map<Commodity*, set<pair<BasePath,double>,setcomp> >();
+      map<Commodity*, set<pair<BasePath,double>,setcomp> > Allocation;
       for (vector<Commodity*>::iterator it_commodity = (*it)->m_vCommodity.begin();
            it_commodity != (*it)->m_vCommodity.end(); ++it_commodity)
       {
@@ -233,12 +251,18 @@ int main(...)
         BaseVertex* p_source = VirtualAS[index]->get_vertex(s_vertexID,VirtualAS[index]->get_graphID());
         BaseVertex* p_sink = VirtualAS[index]->get_vertex(d_vertexID,VirtualAS[index]->get_graphID());
         Commodity* map_com = new Commodity(p_source,p_sink, (*it_commodity)->demand_);
-        Allocation->insert(pair<Commodity*, set<pair<BasePath,double>,setcomp> >(map_com,empty_set));
+        Allocation[map_com] = empty_set;
         VirtualAS[index]->m_vCommodity.push_back(map_com);
       }
       cout << "The total send feasible throughput = " << totalSendThr << endl;
       //Google_TE_Optimization(VirtualAS[index], Allocation);
-      Max_Throughput_TE(VirtualAS[index], Allocation);
+      // get the memory footprint
+      //process_mem_usage(vm, rss);
+      //cout << "Before TE, VM: " << vm << "; RSS: " << rss << endl;
+      Max_Throughput_TE(VirtualAS[index], &Allocation);
+      // get the memory footprint
+      //process_mem_usage(vm, rss);
+      //cout << "After TE, VM: " << vm << "; RSS: " << rss << endl;
       /*
       if (rand()%101/100.0 < prob_Google)
       {
@@ -253,15 +277,14 @@ int main(...)
       /*
        * print out the allocation results
        */
-      for (map<Commodity*, set<pair<BasePath,double>,setcomp> >::iterator it_com = Allocation->begin();
-           it_com != Allocation->end(); ++it_com)
+      for (auto it_com = Allocation.begin();it_com != Allocation.end(); ++it_com)
       {
-        it_com->first->Print(result);
+        //it_com->first->Print(result);
         double totalAllocated = 0;
         for (set<pair<BasePath,double>,setcomp>::iterator it_set = it_com->second.begin();
              it_set != it_com->second.end(); ++ it_set)
         {
-          it_set->first.PrintOut(result);
+          //it_set->first.PrintOut(result);
           totalAllocated += it_set->second;
         }
         if (it_com->first->Allocated_ == NOPATH)
@@ -269,7 +292,6 @@ int main(...)
           it_com->first->Print(cout);
           cout << "No path for this commodity" << endl;
           cout << "***************************" << endl;
-
         }
         else if (abs(it_com->first->Allocated_ - totalAllocated) > delta)
         {
@@ -282,7 +304,7 @@ int main(...)
       v_Allocation.push_back(Allocation);
       VirtualAS[index]->recover_removed_edges();
     }
-    result << "****************************************\n";
+    //result << "****************************************\n";
 
     vector<vector<Commodity*> > NewCommodity(ASes.size(),vector<Commodity*>());
 
@@ -290,11 +312,10 @@ int main(...)
      * update the commodities and packets sent
      */
     int index;
-    for (vector<map<Commodity*, set<pair<BasePath,double>,setcomp> >* >::iterator it = v_Allocation.begin();
-         it != v_Allocation.end(); ++it)
+    for (auto it = v_Allocation.begin(); it != v_Allocation.end(); ++it)
     {
       index = it - v_Allocation.begin();
-      result << "AS " << index << "\n";
+      //result << "AS " << index << "\n";
       cout << "*************************************************************" << endl;
       cout << "AS " << index << "\n";
       map<Commodity*, set<pair<BasePath,double>,setcomp> >::iterator it_map;
@@ -302,13 +323,13 @@ int main(...)
        * if the commodity's destination and source are in the same AS, then the commodity arrives the destination.
        * Otherwise, the commodity enter into transit AS
        */
-      for (it_map = (*(*it)).begin(); it_map != (*(*it)).end(); ++it_map)
+      for (it_map = (*it).begin(); it_map != (*it).end(); ++it_map)
       {
         if (it_map->first->Allocated_ == NOPATH)
         {
           continue;
         }
-        it_map->first->Print(result);
+        //it_map->first->Print(result);
 
         int oriNodeID, oriASID;
         VirtualAS[index]->get_original_id(it_map->first->source_->getID(),oriNodeID,oriASID);
@@ -327,7 +348,7 @@ int main(...)
           {
             Throughput += it_set->second;
             Aver_cost += it_set->first.Weight();
-            it_set->first.PrintOut(result);
+            //it_set->first.PrintOut(result);
             cout << "allocation to this path = " << it_set->second << endl;
             VirtualAS[index]->printPath(&(it_set->first));
           }
@@ -379,10 +400,9 @@ int main(...)
         cout << "---------------------------------------" << endl;
       }
     }
-    // clear the memory allocation
-    for (auto it = v_Allocation.begin(); it != v_Allocation.end(); ++it){
-      delete *it;
-    }
+    // get the memory footprint
+    //process_mem_usage(vm, rss);
+    //cout << "After updating commodities, VM: " << vm << "; RSS: " << rss << endl;
 
     for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
     {
@@ -395,6 +415,9 @@ int main(...)
         (*it)->m_vCommodity.push_back(*it_c);
       }
     }
+    // get the memory footprint
+    //process_mem_usage(vm, rss);
+    //cout << "After memory release, VM: " << vm << "; RSS: " << rss << endl;
   }
   // clear the memory for graphs
   for (auto g = ASes.begin(); g != ASes.end(); ++g){
@@ -406,5 +429,5 @@ int main(...)
   for (auto g = VirtualAS.begin(); g != VirtualAS.end(); ++g){
     (*g)->clear();
   }
-  result.close();
+  //result.close();
 }

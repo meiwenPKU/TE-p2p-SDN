@@ -1,9 +1,30 @@
 #include "utility.h"
 
+void process_mem_usage(double& vm_usage, double& resident_set)
+{
+    vm_usage     = 0.0;
+    resident_set = 0.0;
+
+    // the two fields we want
+    unsigned long vsize;
+    long rss;
+    {
+        std::string ignore;
+        std::ifstream ifs("/proc/self/stat", std::ios_base::in);
+        ifs >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore
+                >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore >> ignore
+                >> ignore >> ignore >> vsize >> rss;
+    }
+
+    long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024; // in case x86-64 is configured to use 2MB pages
+    vm_usage = vsize / 1024.0;
+    resident_set = rss * page_size_kb;
+}
+
 void GenerateCommodity(vector<Graph*> ASes)
 {
   int GenerateMethod = 1; // Generate specified commodity if 0, otherwise generate random commodities
-  cout << "commodities: source node --> sink node: demand" << endl;
+  //cout << "commodities: source node --> sink node: demand" << endl;
   if (GenerateMethod == 0)
   {
     // this method is to generate explicit commodities such that debugging can be simplified
@@ -18,7 +39,7 @@ void GenerateCommodity(vector<Graph*> ASes)
     Commodity* pt_commodity1 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
         ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
     ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity1);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
+    //cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
 
 
     //----commodity 2-----
@@ -30,7 +51,7 @@ void GenerateCommodity(vector<Graph*> ASes)
     Commodity* pt_commodity2 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
         ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
     ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity2);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
+    //cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
 
 
     //----commodity 3-----
@@ -42,7 +63,7 @@ void GenerateCommodity(vector<Graph*> ASes)
     Commodity* pt_commodity3 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
         ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
     ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity3);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
+    //cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
 
 
     //----commodity 4-----
@@ -54,7 +75,7 @@ void GenerateCommodity(vector<Graph*> ASes)
     Commodity* pt_commodity4 = new Commodity(ASes[s_AS_id]->get_vertex(s_node_id,ASes[s_AS_id]->get_graphID()),
         ASes[d_AS_id]->get_vertex(d_node_id,ASes[d_AS_id]->get_graphID()),demand);
     ASes[s_AS_id]->m_vCommodity.push_back(pt_commodity4);
-    cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
+    //cout << "(" << s_AS_id << ", " << s_node_id << ") --> (" << d_AS_id << ", " << d_node_id << "): " << demand << endl;
 
   }
   else
@@ -81,7 +102,7 @@ void GenerateCommodity(vector<Graph*> ASes)
 	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),ASes[i]->get_vertex(desti,ASes[i]->get_graphID()),demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
             v_commodity.push_back(pt_commodity);
-            cout << "(" << i << ", " << j << ") --> (" << i << ", " << desti << "): " << demand << endl;
+            //cout << "(" << i << ", " << j << ") --> (" << i << ", " << desti << "): " << demand << endl;
           }
           else
           {
@@ -98,7 +119,7 @@ void GenerateCommodity(vector<Graph*> ASes)
                                                     ASes[desti_AS]->get_vertex(desti,ASes[desti_AS]->get_graphID()),demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
             v_commodity.push_back(pt_commodity);
-            cout << "(" << i << ", " << j << ") --> (" << desti_AS << ", " << desti << "): " << demand << endl;
+            //cout << "(" << i << ", " << j << ") --> (" << desti_AS << ", " << desti << "): " << demand << endl;
           }
         }
       }
@@ -117,7 +138,7 @@ BaseVertex* NetworkToAS(Graph& network, vector<Graph*> ASes, BaseVertex* ori_ver
       return ASes[graphID]->get_vertex(vertexID,graphID);
     }
   }
-  cout << "wrong: can not map the vertex in the network to the AS" << endl;
+  //cout << "wrong: can not map the vertex in the network to the AS" << endl;
   return NULL;
 }
 
@@ -188,20 +209,31 @@ void testYenAlg(Graph& my_graph)
  */
 void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, setcomp> >* Allocation)
 {
+  double vm, rss;
+  double oldvm, oldrss, newvm, newrss;
+  //process_mem_usage(vm, rss);
+  //cout << "Before call func, VM: " << vm << "; RSS: " << rss << endl;
   DijkstraShortestPathAlg shortest_path_alg(AS);
   double current_fair_share = 0;
   int num_iteration = 0;
-  BasePath* shortest_path;
+  BasePath shortest_path;
   Commodity* target_com;
   double min_cost = 1000000000;
   double Thr;
 
+  //process_mem_usage(vm, rss);
+  //cout << "Before iterating, VM: " << vm << "; RSS: " << rss << endl;
+
   while (true)
   {
+    //process_mem_usage(vm, rss);
+    //cout << "Before finding the shortest path, VM: " << vm << "; RSS: " << rss << endl;
     /*
      * find the shortest path (with the minimal weight) for each commodity
      */
     min_cost = 1000000000;
+    double pathvm = 0;
+    double pathrss = 0;
     for (vector<Commodity*>::iterator it = AS->m_vCommodity.begin(); it != AS->m_vCommodity.end(); ++it)
     {
       if ((*it)->Allocated_ == NOPATH ||
@@ -209,20 +241,24 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
       {
         continue;
       }
+      process_mem_usage(oldvm, oldrss);
       BasePath* result = shortest_path_alg.get_shortest_path((*it)->source_, (*it)->sink_);
+      process_mem_usage(newvm, newrss);
+      pathvm += newvm - oldvm;
+      pathrss += newrss - oldrss;
       if (result->length() > 0)
       {
         // if the path only contains one vertex
         if (result->GetVertex(0) == result->GetLastVertex())
         {
-          cout << "wrong in Max_Throughput_TE(): the path only contains one node" << endl;
+          //cout << "wrong in Max_Throughput_TE(): the path only contains one node" << endl;
         }
         else
         {
           if (min_cost > result->Weight())
           {
             min_cost = result->Weight();
-            shortest_path = result;
+            shortest_path = *result;
             target_com = *it;
           }
         }
@@ -238,7 +274,15 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
           (*it)->isSaturated_ = true;
         }
       }
+      process_mem_usage(oldvm, oldrss);
+      std::cout << "before deleting, # BasePath objects = " << result->counter << '\n';
+      delete result;
+      result = NULL;
+      std::cout << "after deleting, # BasePath objects = " << result->counter << '\n';
+      process_mem_usage(newvm, newrss);
+      cout << "release vm = " << newvm - oldvm << "; release rss = " << newrss - oldrss << endl;
     }
+    cout << "Path vm = " << pathvm << "; path rss = " << pathrss << endl;
 
     if (min_cost == 1000000000)
     {
@@ -246,22 +290,24 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
     }
 
     //determine the throughput of this path
-    Thr = min(AS->get_path_BW(shortest_path),target_com->demand_ - target_com->Allocated_);
+    Thr = min(AS->get_path_BW(&shortest_path),target_com->demand_ - target_com->Allocated_);
     if (Thr < 0.1)
     {
       target_com->isSaturated_ = true;
       continue;
     }
+    //process_mem_usage(vm, rss);
+    //cout << "Before transmiting the shortest path, VM: " << vm << "; RSS: " << rss << endl;
 
     //transmit the shortest path
-    for (int i = 0; i < shortest_path->length() -1; ++i)
+    for (int i = 0; i < shortest_path.length() -1; ++i)
     {
-      double newUsedBW = AS->get_edge_UsedBW(shortest_path->GetVertex(i), shortest_path->GetVertex(i+1)) + Thr;
-      AS->set_edge_UsedBW(shortest_path->GetVertex(i), shortest_path->GetVertex(i+1), newUsedBW);
-      if (newUsedBW + delta > AS->get_edge_BW(shortest_path->GetVertex(i), shortest_path->GetVertex(i+1)))
+      double newUsedBW = AS->get_edge_UsedBW(shortest_path.GetVertex(i), shortest_path.GetVertex(i+1)) + Thr;
+      AS->set_edge_UsedBW(shortest_path.GetVertex(i), shortest_path.GetVertex(i+1), newUsedBW);
+      if (newUsedBW + delta > AS->get_edge_BW(shortest_path.GetVertex(i), shortest_path.GetVertex(i+1)))
       {
-        pair<int, int> removed_edge(AS->get_vertex_code(shortest_path->GetVertex(i)),
-                                    AS->get_vertex_code(shortest_path->GetVertex(i+1)));
+        pair<int, int> removed_edge(AS->get_vertex_code(shortest_path.GetVertex(i)),
+                                    AS->get_vertex_code(shortest_path.GetVertex(i+1)));
         AS->remove_edge(removed_edge);
       }
     }
@@ -271,6 +317,9 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
      */
     target_com->Allocated_ += Thr;
 
+    //process_mem_usage(vm, rss);
+    //cout << "Before updating the allocation, VM: " << vm << "; RSS: " << rss << endl;
+
     /*
      * update the return value
      */
@@ -279,7 +328,7 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
     for (set<pair<BasePath,double> >::iterator it_set = Allocation->at(target_com).begin();
          it_set != Allocation->at(target_com).end(); ++it_set)
     {
-      if (it_set->first == *shortest_path)
+      if (it_set->first == shortest_path)
       {
         isFind = true;
         BasePath temp_path = it_set->first;
@@ -293,11 +342,13 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
     if (!isFind)
     {
       double extraAllocated = Thr;
-      Allocation->at(target_com).insert(pair<BasePath,double>(*shortest_path,extraAllocated));
+      Allocation->at(target_com).insert(pair<BasePath,double>(shortest_path,extraAllocated));
     }
     num_iteration++;
+    //process_mem_usage(vm, rss);
+    //cout << "After one iteration, VM: " << vm << "; RSS: " << rss << endl;
   }
-  cout << "iteration number = " << num_iteration << endl;
+  //cout << "iteration number = " << num_iteration << endl;
 }
 
 /*
@@ -376,7 +427,7 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
         // if the path only contains one vertex
         if (result->GetVertex(0) == result->GetLastVertex())
         {
-          cout << "wrong in Google_TE_Optimization(): the path only contains one node" << endl;
+          //cout << "wrong in Google_TE_Optimization(): the path only contains one node" << endl;
         }
         else
         {
@@ -402,7 +453,7 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
       }
     }
 
-    //cout << "prefer paths size = " << v_prefer_path.size() << endl;
+    ////cout << "prefer paths size = " << v_prefer_path.size() << endl;
     if (v_prefer_path.size()==0)
     {
       break;
@@ -556,7 +607,7 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
     /*
      * if all commodities are satisfied or no more bottleneck is found, exit the algorithm
      */
-    //cout << "number of satisfied commodities = " << numSatisfiedCommodity << endl;
+    ////cout << "number of satisfied commodities = " << numSatisfiedCommodity << endl;
     if (numSatisfiedCommodity == AS->m_vCommodity.size() || !findBottle)
     {
       break;
@@ -597,7 +648,7 @@ void Google_TE_Optimization_Benchmark(Graph* AS, map<Commodity*, set<pair<BasePa
         // if the path only contains one vertex
         if (result->GetVertex(0) == result->GetLastVertex())
         {
-          cout << "wrong in Google_TE_Optimization(): the path only contains one node" << endl;
+          //cout << "wrong in Google_TE_Optimization(): the path only contains one node" << endl;
         }
         else
         {

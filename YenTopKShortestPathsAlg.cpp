@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 ///  YenTopKShortestPathsAlg.cpp
-///  The implementation of Yen's algorithm to get the top k shortest paths 
-///  connecting a pair of vertices in a graph. 
+///  The implementation of Yen's algorithm to get the top k shortest paths
+///  connecting a pair of vertices in a graph.
 ///
 ///  @remarks <TODO: insert remarks here>
 ///
@@ -59,14 +59,14 @@ BasePath* YenTopKShortestPathsAlg::next()
 {
 	//1. Prepare for removing vertices and arcs
 	BasePath* cur_path = *(m_quPathCandidates.begin());//m_quPathCandidates.top();
-	
+
 	//m_quPathCandidates.pop();
 	m_quPathCandidates.erase(m_quPathCandidates.begin());
 	m_vResultList.push_back(cur_path);
 
 	int count = m_vResultList.size();
-	
-	BaseVertex* cur_derivation_pt = m_mpDerivationVertexIndex.find(cur_path)->second; 
+
+	BaseVertex* cur_derivation_pt = m_mpDerivationVertexIndex.find(cur_path)->second;
 	vector<BaseVertex*> sub_path_of_derivation_pt;
 	cur_path->SubPath(sub_path_of_derivation_pt, cur_derivation_pt);
 	int sub_path_length = sub_path_of_derivation_pt.size();
@@ -76,11 +76,11 @@ BasePath* YenTopKShortestPathsAlg::next()
 	{
 		BasePath* cur_result_path = m_vResultList.at(i);
 		vector<BaseVertex*> cur_result_sub_path_of_derivation_pt;
-		
+
 		if (!cur_result_path->SubPath(cur_result_sub_path_of_derivation_pt, cur_derivation_pt)) continue;
 
 		if (sub_path_length != cur_result_sub_path_of_derivation_pt.size()) continue;
-		
+
 		bool is_equal = true;
 		for (int i=0; i<sub_path_length; ++i)
 		{
@@ -191,14 +191,14 @@ BasePath* YenTopKShortestPathsAlg::next()
 	return cur_path;
 }
 
-void YenTopKShortestPathsAlg::get_shortest_paths( BaseVertex* pSource, 
+void YenTopKShortestPathsAlg::get_shortest_paths( BaseVertex* pSource,
 	BaseVertex* pTarget, int top_k, vector<BasePath*>& result_list)
 {
 	m_pSourceVertex = pSource;
 	m_pTargetVertex = pTarget;
 
 	_init();
-	int count = 0; 
+	int count = 0;
 	while (has_next() && count < top_k)
 	{
 		next();

@@ -1,4 +1,4 @@
-file = "data/test_6Degree10AS"
+file = "data/test_5AS"
 outputFile = file + "_undirected"
 
 with open(file, 'r') as fin:

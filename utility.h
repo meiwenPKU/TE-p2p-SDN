@@ -9,6 +9,8 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <memory>
+#include <unistd.h>
 #include "GraphElements.h"
 #include "Graph.h"
 #include "Commodity.h"
@@ -34,6 +36,8 @@ struct setcomp
     }
   }
 };
+
+void process_mem_usage(double& vm_usage, double& resident_set);
 
 void GenerateCommodity(vector<Graph*> ASes);
 
