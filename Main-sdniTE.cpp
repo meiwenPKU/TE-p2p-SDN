@@ -130,16 +130,9 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
 
 int main(...)
 {
-  // // a simple test
-  // double oldvm, oldrss, newvm, newrss;
-  // int* a = new int [1000];
-  // //process_mem_usage(oldvm, oldrss);
-  // delete[] a;
-  // //process_mem_usage(newvm, newrss);
-  // cout << "release vm = " << newvm - oldvm << "; release rss = " << newrss - oldrss << endl;
   //--------create the topology-----------------
   vector<Graph*> ASes;
-  string file_name = "data/test_6Degree10AS_undirected";
+  string file_name = "data/test_6Degree10AS";
 
   for (int i = 0; i < N_AS; i++)
   {

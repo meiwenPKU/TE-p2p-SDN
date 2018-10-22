@@ -232,8 +232,8 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
      * find the shortest path (with the minimal weight) for each commodity
      */
     min_cost = 1000000000;
-    double pathvm = 0;
-    double pathrss = 0;
+    //double pathvm = 0;
+    //double pathrss = 0;
     for (vector<Commodity*>::iterator it = AS->m_vCommodity.begin(); it != AS->m_vCommodity.end(); ++it)
     {
       if ((*it)->Allocated_ == NOPATH ||
@@ -241,11 +241,11 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
       {
         continue;
       }
-      process_mem_usage(oldvm, oldrss);
+      //process_mem_usage(oldvm, oldrss);
       BasePath* result = shortest_path_alg.get_shortest_path((*it)->source_, (*it)->sink_);
-      process_mem_usage(newvm, newrss);
-      pathvm += newvm - oldvm;
-      pathrss += newrss - oldrss;
+      //process_mem_usage(newvm, newrss);
+      //pathvm += newvm - oldvm;
+      //pathrss += newrss - oldrss;
       if (result->length() > 0)
       {
         // if the path only contains one vertex
@@ -274,15 +274,15 @@ void Max_Throughput_TE(Graph* AS, map<Commodity*, set<pair<BasePath,double>, set
           (*it)->isSaturated_ = true;
         }
       }
-      process_mem_usage(oldvm, oldrss);
-      std::cout << "before deleting, # BasePath objects = " << result->counter << '\n';
+      //process_mem_usage(oldvm, oldrss);
+      //std::cout << "before deleting, # BasePath objects = " << result->counter << '\n';
       delete result;
       result = NULL;
-      std::cout << "after deleting, # BasePath objects = " << result->counter << '\n';
-      process_mem_usage(newvm, newrss);
-      cout << "release vm = " << newvm - oldvm << "; release rss = " << newrss - oldrss << endl;
+      //std::cout << "after deleting, # BasePath objects = " << result->counter << '\n';
+      //process_mem_usage(newvm, newrss);
+      //cout << "release vm = " << newvm - oldvm << "; release rss = " << newrss - oldrss << endl;
     }
-    cout << "Path vm = " << pathvm << "; path rss = " << pathrss << endl;
+    //cout << "Path vm = " << pathvm << "; path rss = " << pathrss << endl;
 
     if (min_cost == 1000000000)
     {
