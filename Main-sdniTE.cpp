@@ -189,7 +189,7 @@ int main(...)
   vector<map<Commodity*, set<pair<BasePath,double>,setcomp> > > v_Allocation;
   for (time = 0; time < runTime; time++)
   {
-    cout << "size of v_Allocation = " << sizeof(map<Commodity*, set<pair<BasePath,double>,setcomp> >) * v_Allocation.size() << endl;
+    //cout << "size of v_Allocation = " << sizeof(map<Commodity*, set<pair<BasePath,double>,setcomp> >) * v_Allocation.size() << endl;
     v_Allocation.clear();
     // get the memory footprint
     //process_mem_usage(vm, rss);
@@ -235,7 +235,7 @@ int main(...)
         }
         if (VirtualAS[index]->mpNodeID.find(sink_id) == VirtualAS[index]->mpNodeID.end())
         {
-          cout << "Commodity (" << (*it_commodity)->source_->getGraphID() << "," << (*it_commodity)->source_->getID() << ") --> (" << (*it_commodity)->sink_->getGraphID() << "," << (*it_commodity)->sink_->getID() << ") is not reachable" << endl;
+          //cout << "Commodity (" << (*it_commodity)->source_->getGraphID() << "," << (*it_commodity)->source_->getID() << ") --> (" << (*it_commodity)->sink_->getGraphID() << "," << (*it_commodity)->sink_->getID() << ") is not reachable" << endl;
           continue;
         }
         int s_vertexID = VirtualAS[index]->mpNodeID.at(source_id);
@@ -247,7 +247,7 @@ int main(...)
         Allocation[map_com] = empty_set;
         VirtualAS[index]->m_vCommodity.push_back(map_com);
       }
-      cout << "The total send feasible throughput = " << totalSendThr << endl;
+      //cout << "The total send feasible throughput = " << totalSendThr << endl;
       //Google_TE_Optimization(VirtualAS[index], Allocation);
       // get the memory footprint
       //process_mem_usage(vm, rss);
@@ -282,15 +282,15 @@ int main(...)
         }
         if (it_com->first->Allocated_ == NOPATH)
         {
-          it_com->first->Print(cout);
-          cout << "No path for this commodity" << endl;
-          cout << "***************************" << endl;
+          //it_com->first->Print(cout);
+          //cout << "No path for this commodity" << endl;
+          //cout << "***************************" << endl;
         }
         else if (abs(it_com->first->Allocated_ - totalAllocated) > delta)
         {
-          it_com->first->Print(cout);
-          cout << "wrong in main(): allocation does not match" << endl;
-          cout << "***************************" << endl;
+          //it_com->first->Print(cout);
+          //cout << "wrong in main(): allocation does not match" << endl;
+          //cout << "***************************" << endl;
           exit (EXIT_FAILURE);
         }
       }
@@ -309,8 +309,8 @@ int main(...)
     {
       index = it - v_Allocation.begin();
       //result << "AS " << index << "\n";
-      cout << "*************************************************************" << endl;
-      cout << "AS " << index << "\n";
+      //cout << "*************************************************************" << endl;
+      //cout << "AS " << index << "\n";
       map<Commodity*, set<pair<BasePath,double>,setcomp> >::iterator it_map;
       /*
        * if the commodity's destination and source are in the same AS, then the commodity arrives the destination.
@@ -326,10 +326,10 @@ int main(...)
 
         int oriNodeID, oriASID;
         VirtualAS[index]->get_original_id(it_map->first->source_->getID(),oriNodeID,oriASID);
-        cout << "(" << oriASID << "," << oriNodeID << ")-->";
+        //cout << "(" << oriASID << "," << oriNodeID << ")-->";
         VirtualAS[index]->get_original_id(it_map->first->sink_->getID(),oriNodeID,oriASID);
-        cout << "(" << oriASID << "," << oriNodeID << ");";
-        cout << "demand = " << it_map->first->demand_ << "; Allocated =" << it_map->first->Allocated_ << endl;
+        //cout << "(" << oriASID << "," << oriNodeID << ");";
+        //cout << "demand = " << it_map->first->demand_ << "; Allocated =" << it_map->first->Allocated_ << endl;
 
         BaseVertex* MappedNode = NetworkToAS(*(VirtualAS[index]),ASes,it_map->first->sink_);
         if (MappedNode->getGraphID() == ASes[index]->get_graphID())
@@ -342,8 +342,8 @@ int main(...)
             Throughput += it_set->second;
             Aver_cost += it_set->first.Weight();
             //it_set->first.PrintOut(result);
-            cout << "allocation to this path = " << it_set->second << endl;
-            VirtualAS[index]->printPath(&(it_set->first));
+            //cout << "allocation to this path = " << it_set->second << endl;
+            //VirtualAS[index]->printPath(&(it_set->first));
           }
         }
         else
@@ -354,9 +354,9 @@ int main(...)
           {
             // find the first switch along the path which does not belong to the AS
             BaseVertex* p_border;
-            cout << "allocation to this path = " << it_set->second << endl;
+            //cout << "allocation to this path = " << it_set->second << endl;
             VirtualAS[index]->get_original_id(it_set->first.GetVertex(0)->getID(),oriNodeID,oriASID);
-            cout << "(" << oriASID << "," << oriNodeID << ")";
+            //cout << "(" << oriASID << "," << oriNodeID << ")";
             int len = it_set->first.length();
             for (int i = 1; i < len; ++i)
             {
@@ -364,7 +364,7 @@ int main(...)
               BaseVertex* MappedNode = NetworkToAS(*(VirtualAS[index]),ASes,it_set->first.GetVertex(i));
 
               VirtualAS[index]->get_original_id(it_set->first.GetVertex(i)->getID(),oriNodeID,oriASID);
-              cout << "-->(" << oriASID << "," << oriNodeID << ")";
+              //cout << "-->(" << oriASID << "," << oriNodeID << ")";
 
               Aver_cost += VirtualAS[index]->get_edge_weight(it_set->first.GetVertex(i-1),
                            it_set->first.GetVertex(i));
@@ -374,7 +374,7 @@ int main(...)
                 break;
               }
             }
-            cout << endl;
+            //cout << endl;
             if (p_border == NetworkToAS(*(VirtualAS[index]),ASes,it_set->first.GetLastVertex()))
             {
               // the commodity arrives at the destination
@@ -389,10 +389,11 @@ int main(...)
             }
           }
         }
-        cout << "Throughput=" << Throughput << "; Aver_cost=" << Aver_cost << endl;
-        cout << "---------------------------------------" << endl;
+        //cout << "Throughput=" << Throughput << "; Aver_cost=" << Aver_cost << endl;
+        //cout << "---------------------------------------" << endl;
       }
     }
+    cout << "Throughput=" << Throughput << "; Aver_cost=" << Aver_cost << endl;
     // get the memory footprint
     //process_mem_usage(vm, rss);
     //cout << "After updating commodities, VM: " << vm << "; RSS: " << rss << endl;

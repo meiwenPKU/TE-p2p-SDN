@@ -1,5 +1,8 @@
-file = "data/test_5AS"
-outputFile = file + "_undirected"
+import random
+
+file = "data/test_6Degree10AS"
+prob = 0.2
+outputFile = file + "_"+str(prob)
 
 with open(file, 'r') as fin:
 	inLines = fin.readlines()
@@ -12,6 +15,6 @@ with open(outputFile, 'w') as fout:
 		if (src, dst) not in edges:
 			fout.write(line)
 			edges.add((src, dst))
-		if (dst, src) not in edges:
+		if (dst, src) not in edges and random.uniform(0,1) < prob:
 		    fout.write(dst + '\t' + src + '\t' + weight + '\t' + bw + '\t' + dstAS + '\t' + srcAS + '\n')
 		    edges.add((dst, src))
