@@ -39,7 +39,7 @@ struct setcomp
 
 void process_mem_usage(double& vm_usage, double& resident_set);
 
-void GenerateCommodity(vector<Graph*> ASes);
+void GenerateCommodity(vector<Graph*> ASes, double loadC, int N_AS);
 
 /*
  * map the vertex in the network to the vertex in one AS

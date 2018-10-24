@@ -20,7 +20,7 @@ public:
   TopoTable()
   {
     m_nEntry = 0;
-    m_nK = kPath;
+    m_nK = 0;
   }
   TopoTable(const TopoTable& topoTable )
   {
@@ -28,12 +28,12 @@ public:
     m_nK = topoTable.m_nK;
     m_vEntry = topoTable.m_vEntry;
   }
-  TopoTable(vector<TopoTableEntry> vEntry)
-  {
-    m_vEntry.insert(m_vEntry.begin(), vEntry.begin(), vEntry.end());
-    m_nEntry = vEntry.size();
-    m_nK = kPath;
-  }
+  // TopoTable(vector<TopoTableEntry> vEntry)
+  // {
+  //   m_vEntry.insert(m_vEntry.begin(), vEntry.begin(), vEntry.end());
+  //   m_nEntry = vEntry.size();
+  //   //m_nK = kPath;
+  // }
 
   void operator=(const TopoTable &topoTable)
   {

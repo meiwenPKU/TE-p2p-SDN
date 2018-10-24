@@ -34,11 +34,20 @@ using namespace std;
 
 int Graph::Graph_ID = 0;
 
-int main(...)
+int main(int argc, char** argv)
 {
+  // deal with the argument
+  if (argc != 5){
+    cout << "wrong number of arguments" << endl;
+    return;
+  }
+
+  string file_name = argv[1];
+  int N_AS = int(argv[2]);
+  int kPath = int(argv[3]);
+  double loadC = double(argv[4]);
   //--------create the topology-----------------
   vector<Graph*> ASes;
-  string file_name = "data/test_6Degree10AS";
 
   for (int i = 0; i < N_AS; i++)
   {
@@ -68,7 +77,7 @@ int main(...)
   for (time = 0; time < runTime; time++)
   {
     //generate commodities
-    GenerateCommodity(ASes);
+    GenerateCommodity(ASes, loadC, N_AS);
     cout << "time = " << time << endl;
     // each AS do the traffic engineering for its own commodities based on the topology
     vector<map<Commodity*, set<pair<BasePath,double>,setcomp> >* > v_Allocation;

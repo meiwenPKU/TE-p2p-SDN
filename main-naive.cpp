@@ -157,16 +157,24 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
 }
 
 
-
-int main(...)
+int main(int argc, char** argv)
 {
+  // deal with the argument
+  if (argc != 5){
+    cout << "wrong number of arguments" << endl;
+    return 0;
+  }
+
+  string file_name = argv[1];
+  int N_AS = atoi(argv[2]);
+  int kPath = atoi(argv[3]);
+  double loadC = atof(argv[4]);
+
   //--------create the topology-----------------
   vector<Graph*> ASes;
-  string file_name = "data/test_6Degree10AS";
-
   for (int i = 0; i < N_AS; i++)
   {
-    Graph* temp = new Graph(file_name);
+    Graph* temp = new Graph(file_name, kPath);
     ASes.push_back(temp);
   }
 
@@ -195,7 +203,7 @@ int main(...)
   int numEntries = 0;
   for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
   {
-    Graph* temp = new Graph();
+    Graph* temp = new Graph(kPath);
     numEntries += (*it)->m_TopoTable.m_nEntry;
     //cout << "The topo table of AS " << (*it)->get_graphID() << endl;
     //(*it)->printTopoTable();
@@ -223,7 +231,7 @@ int main(...)
     //process_mem_usage(vm, rss);
     //cout << "Before one iteratin, VM: " << vm << "; RSS: " << rss << endl;
     //generate commodities
-    GenerateCommodity(ASes);
+    GenerateCommodity(ASes, loadC, N_AS);
     // get the memory footprint
     //process_mem_usage(vm, rss);
     //cout << "After generating commodities, VM: " << vm << "; RSS: " << rss << endl;

@@ -389,9 +389,9 @@ InterGraph::InterGraph(Graph* left_graph, Graph* right_graph, const string& inpu
   ifs.close();
 }
 
-Graph::Graph( const string& file_name )
+Graph::Graph( const string& file_name, int kPath)
 {
-  _import_from_file(file_name);
+  _import_from_file(file_name, kPath);
 }
 
 Graph::Graph(const string& file_name, bool buildEntireNetwork)
@@ -518,8 +518,10 @@ Graph::~Graph(void)
 ///
 ///  @author Yan Qi @date 5/29/2010
 ///////////////////////////////////////////////////////////////////////////////
-void Graph::_import_from_file( const string& input_file_name )
+void Graph::_import_from_file( const string& input_file_name, int kPath )
 {
+  m_TopoTable.m_nK = kPath;
+  m_AdvertisedTopoTable.m_nK = kPath;
   const char* file_name = input_file_name.c_str();
 
   //1. Check the validity of the file
@@ -1551,33 +1553,26 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
       double max_cost = 0;
       myAlg.MaxFlow(max_flow,max_cost);
 
+      // determine the as path field of the aggregated route
       vector<int> v_ASpath((*(*it_BorderToSink.begin())).m_vASPath.begin(),
                            (*(*it_BorderToSink.begin())).m_vASPath.end());
       vector<int>::iterator it_path;
-      for (vector<vector<TopoTableEntry>::iterator>::iterator it_de = it_BorderToSink.begin() + 1;
-           it_de != it_BorderToSink.end(); ++it_de)
+      for (auto it_de = it_BorderToSink.begin() + 1; it_de != it_BorderToSink.end(); ++it_de)
       {
-        vector<int> v_temp_path(N_AS);
+        // for (auto it_as = s_ASpath.begin(); it_as != s_ASpath.end(); it_as++){
+        //   if ((*(*it_de)).m_vASPath.find(*it_as) == (*(*it_de)).m_vASPath.end()){
+        //     s_ASpath.erase(*it_as);
+        //   }
+        // }
+        vector<int> v_temp_path(100); // number of ases should <= 100
         it_path = set_intersection(v_ASpath.begin(), v_ASpath.end(),
                                    (*(*it_de)).m_vASPath.begin(), (*(*it_de)).m_vASPath.end(),
                                    v_temp_path.begin());
         v_temp_path.resize(it_path-v_temp_path.begin());
         v_ASpath = v_temp_path;
       }
-
-
+      // std::vector<int> v_ASpath(s_ASpath.begin(), s_ASpath.end());
       v_insertTopoEntry.push_back(TopoTableEntry(*it_border,entry.m_sink,NULL,max_cost,max_flow,v_ASpath));
-      // // debug
-      // if (max_flow == 0){
-      //   for (int i = 0; i < numVertices; ++i)
-      //   {
-      //     for (int j = 0; j < numVertices; ++j)
-      //     {
-      //       cout << i << " -> " << j << ":" << graph[i][j].flow << ", " << graph[i][j].capacity << ", " << graph[i][j].cost << endl;
-      //     }
-      //   }
-      //   cout << "debug here";
-      // }
     }
     // insert the entry into the advertise table
     // the advertise table can only contain one entry for each source - sink pair

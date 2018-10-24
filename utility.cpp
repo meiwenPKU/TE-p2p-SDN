@@ -21,7 +21,7 @@ void process_mem_usage(double& vm_usage, double& resident_set)
     resident_set = rss * page_size_kb;
 }
 
-void GenerateCommodity(vector<Graph*> ASes)
+void GenerateCommodity(vector<Graph*> ASes, double loadC, int N_AS)
 {
   int GenerateMethod = 1; // Generate specified commodity if 0, otherwise generate random commodities
   //cout << "commodities: source node --> sink node: demand" << endl;

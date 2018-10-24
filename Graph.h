@@ -91,9 +91,12 @@ protected: // members
 public:
 
   // Constructors and Destructor
-  Graph(const string& file_name);
+  Graph(const string& file_name, int kPath);
   Graph(const Graph* rGraph);
-  Graph():m_nEdgeNum(0),m_nVertexNum(0),m_graphID(0), m_maxBW(0) {}
+  Graph(int kPath):m_nEdgeNum(0),m_nVertexNum(0),m_graphID(0), m_maxBW(0){
+    m_TopoTable.m_nK = kPath;
+    m_AdvertisedTopoTable.m_nK = kPath;
+  }
   /*---hemin-----
    * \brief this constructor is to construct a network containing several ASs
    * \param file_name, the txt file containing all the information needed for the internet
@@ -272,7 +275,7 @@ public:
   void add_edge(BaseVertex* start_vertex_pt, BaseVertex* end_vertex_pt, double edge_weight, double edge_BW);
 
 private:
-  void _import_from_file(const std::string& file_name);
+  void _import_from_file(const std::string& file_name, int kPath);
 
 };
 
