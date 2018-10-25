@@ -528,6 +528,16 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
       }
     }
 
+    //TODO optimize the condition to exit such that less iterations are needed
+    if (min_fair_share == current_fair_share){
+      for (auto it = v_prefer_path.begin(); it != v_prefer_path.end(); ++it){
+        delete (*it);
+      }
+      v_prefer_path.clear();
+      break;
+    }
+
+
     /*
      * According to the minimal fair share, update the used bandwidth of each edge
      */
@@ -596,6 +606,12 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
       }
     }
 
+    // release memory allocated to BasePath object
+    for (auto it = v_prefer_path.begin(); it != v_prefer_path.end(); ++it){
+      delete (*it);
+    }
+    v_prefer_path.clear();
+
     current_fair_share = min_fair_share;
     for (map<int, set<Commodity*>*>::iterator it = AS->m_mpEdgeCodeCommodity.begin();
          it != AS->m_mpEdgeCodeCommodity.end(); ++it)
@@ -607,7 +623,6 @@ void Google_TE_Optimization(Graph* AS, map<Commodity*, set<pair<BasePath,double>
     /*
      * if all commodities are satisfied or no more bottleneck is found, exit the algorithm
      */
-    ////cout << "number of satisfied commodities = " << numSatisfiedCommodity << endl;
     if (numSatisfiedCommodity == AS->m_vCommodity.size() || !findBottle)
     {
       break;
@@ -625,9 +640,11 @@ void Google_TE_Optimization_Benchmark(Graph* AS, map<Commodity*, set<pair<BasePa
 {
   DijkstraShortestPathAlg shortest_path_alg(AS);
   double current_fair_share = 0;
-
+  //int numIterations = 0;
   while (true)
   {
+    //numIterations ++;
+    //cout << "start iteration = " << numIterations << endl;
     vector<BasePath*> v_prefer_path;
     map<BasePath*, Commodity*> mp_PathToCommodity;
 
@@ -748,6 +765,15 @@ void Google_TE_Optimization_Benchmark(Graph* AS, map<Commodity*, set<pair<BasePa
       }
     }
 
+    //TODO optimize the condition to exit such that less iterations are needed
+    if (min_fair_share == current_fair_share){
+      for (auto it = v_prefer_path.begin(); it != v_prefer_path.end(); ++it){
+        delete (*it);
+      }
+      v_prefer_path.clear();
+      break;
+    }
+
     /*
      * According to the minimal fair share, update the used bandwidth of each edge
      */
@@ -774,13 +800,17 @@ void Google_TE_Optimization_Benchmark(Graph* AS, map<Commodity*, set<pair<BasePa
     for (vector<Commodity*>::iterator it = AS->m_vCommodity.begin(); it != AS->m_vCommodity.end(); ++it)
     {
       if ((*it)->Allocated_ == NOPATH ||
-          (*it)->Allocated_ == (*it)->demand_ || (*it)->isSaturated_)
+          (*it)->Allocated_ >= (*it)->demand_ || (*it)->isSaturated_)
       {
         numSatisfiedCommodity ++;
         continue;
       }
+      double preAllocate = (*it)->Allocated_;
       (*it)->Allocated_ += BWFunction((*it),min_fair_share) - BWFunction((*it),current_fair_share);
-      if ((*it)->Allocated_ == (*it)->demand_)
+      // debug
+      //(*it)->Print(cout);
+      //cout << "allocation is increased by " << (*it)->Allocated_ - preAllocate << endl;
+      if ((*it)->Allocated_ >= (*it)->demand_)
       {
         numSatisfiedCommodity ++;
       }
@@ -812,11 +842,15 @@ void Google_TE_Optimization_Benchmark(Graph* AS, map<Commodity*, set<pair<BasePa
       {
         double extraAllocated = BWFunction(mp_PathToCommodity.at(*it),min_fair_share)
                                 - BWFunction(mp_PathToCommodity.at(*it),current_fair_share);
-        //if (Allocation->at(mp_PathToCommodity.at(*it)).size() < kPath){
-	  Allocation->at(mp_PathToCommodity.at(*it)).insert(pair<BasePath,double>(*(*it),extraAllocated));
-	//}
+        Allocation->at(mp_PathToCommodity.at(*it)).insert(pair<BasePath,double>(*(*it),extraAllocated));
       }
     }
+
+    // release memory allocated to BasePath object
+    for (auto it = v_prefer_path.begin(); it != v_prefer_path.end(); ++it){
+      delete (*it);
+    }
+    v_prefer_path.clear();
 
     current_fair_share = min_fair_share;
     for (map<int, set<Commodity*>*>::iterator it = AS->m_mpEdgeCodeCommodity.begin();
@@ -834,4 +868,5 @@ void Google_TE_Optimization_Benchmark(Graph* AS, map<Commodity*, set<pair<BasePa
       break;
     }
   }
+  //cout << "number of iterations = " << numIterations << endl;
 }

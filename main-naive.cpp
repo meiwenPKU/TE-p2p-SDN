@@ -30,7 +30,6 @@ using namespace std;
 
 
 int Graph::Graph_ID = 0;
-int BasePath::counter = 0;
 
 void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
 {
@@ -284,24 +283,24 @@ int main(int argc, char** argv)
         VirtualAS[index]->m_vCommodity.push_back(map_com);
       }
       //cout << "The total send feasible throughput = " << totalSendThr << endl;
-      //Google_TE_Optimization(VirtualAS[index], Allocation);
+      Google_TE_Optimization(VirtualAS[index], &Allocation);
       // get the memory footprint
       //process_mem_usage(vm, rss);
       //cout << "Before TE, VM: " << vm << "; RSS: " << rss << endl;
-      Max_Throughput_TE(VirtualAS[index], &Allocation);
+      //Max_Throughput_TE(VirtualAS[index], &Allocation);
       // get the memory footprint
       //process_mem_usage(vm, rss);
       //cout << "After TE, VM: " << vm << "; RSS: " << rss << endl;
-      /*
-      if (rand()%101/100.0 < prob_Google)
-      {
-        Google_TE_Optimization(VirtualAS[index], Allocation);
-      }
-      else
-      {
-        Max_Throughput_TE(VirtualAS[index], Allocation);
-      }
-      */
+
+      // if (rand()%101/100.0 < prob_Google)
+      // {
+      //   Google_TE_Optimization(VirtualAS[index], &Allocation);
+      // }
+      // else
+      // {
+      //   Max_Throughput_TE(VirtualAS[index], &Allocation);
+      // }
+
 
       /*
        * print out the allocation results

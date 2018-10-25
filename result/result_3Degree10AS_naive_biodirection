@@ -1,0 +1,62 @@
+time stamp = 4; total msg overhead = 399702
+number of topotable entries = 39317
+time = 0
+Throughput=502.1; Aver_cost=1176.68
+time = 1
+Throughput=1262.86; Aver_cost=2559.62
+time = 2
+Throughput=2071.16; Aver_cost=4029.4
+time = 3
+Throughput=2876.39; Aver_cost=5495.55
+time = 4
+Throughput=3686.67; Aver_cost=6936.92
+time = 5
+Throughput=4504.72; Aver_cost=8396.09
+time = 6
+Throughput=5316.96; Aver_cost=9847.97
+time = 7
+Throughput=6131.58; Aver_cost=11304.5
+time = 8
+Throughput=6943.82; Aver_cost=12756.4
+time = 9
+Throughput=7758.44; Aver_cost=14213
+time = 10
+Throughput=8570.68; Aver_cost=15664.9
+time = 11
+Throughput=9385.3; Aver_cost=17121.4
+time = 12
+Throughput=10197.5; Aver_cost=18573.3
+time = 13
+Throughput=11012.2; Aver_cost=20029.9
+time = 14
+Throughput=11824.4; Aver_cost=21481.8
+time = 15
+Throughput=12639; Aver_cost=22938.3
+time = 16
+Throughput=13451.3; Aver_cost=24390.2
+time = 17
+Throughput=14265.9; Aver_cost=25846.8
+time = 18
+Throughput=15078.1; Aver_cost=27298.7
+time = 19
+Throughput=15892.7; Aver_cost=28755.2
+time = 20
+Throughput=16705; Aver_cost=30207.1
+time = 21
+Throughput=17519.6; Aver_cost=31663.7
+time = 22
+Throughput=18331.8; Aver_cost=33115.6
+time = 23
+Throughput=19146.5; Aver_cost=34572.1
+time = 24
+Throughput=19958.7; Aver_cost=36024
+time = 25
+Throughput=20773.3; Aver_cost=37480.6
+time = 26
+Throughput=21585.6; Aver_cost=38932.5
+time = 27
+Throughput=22400.2; Aver_cost=40389
+time = 28
+Throughput=23212.4; Aver_cost=41840.9
+time = 29
+Throughput=24027; Aver_cost=43297.5

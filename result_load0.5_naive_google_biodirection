@@ -1,0 +1,9 @@
+time stamp = 4; total msg overhead = 912671
+number of topotable entries = 55549
+time = 0
+Throughput=56.7917; Aver_cost=935.18
+time = 1
+Throughput=284.148; Aver_cost=3538.64
+time = 2
+Throughput=584.871; Aver_cost=7946.21
+time = 3

@@ -1,8 +1,8 @@
 import random
 
-file = "data/test_6Degree10AS"
-prob = 0.2
-outputFile = file + "_"+str(prob)
+file = "data/test_9Degree10AS"
+prob = 2
+outputFile = file + "_biodirection"
 
 with open(file, 'r') as fin:
 	inLines = fin.readlines()

@@ -130,6 +130,8 @@ void DijkstraShortestPathAlg::improve2vertex( BaseVertex* cur_vertex_pt, bool is
 			m_quCandidateVertices.insert(*cur_neighbor_pos);
 		}
 	}
+	// release the memory allocated by new
+	delete neighbor_vertex_list_pt;
 }
 
 void DijkstraShortestPathAlg::clear()
@@ -196,6 +198,7 @@ BasePath* DijkstraShortestPathAlg::update_cost_forward( BaseVertex* vertex )
 
 		sub_path = new BasePath(vertex_list, cost);
  	}
+	delete adj_vertex_set;
  	return sub_path;
 }
 

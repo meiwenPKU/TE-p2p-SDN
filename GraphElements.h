@@ -158,18 +158,15 @@ protected:
   std::vector<BaseVertex*> m_vtVertexList;
 
 public:
-  static int counter;
   BasePath(const std::vector<BaseVertex*>& vertex_list, double weight)
     :m_dWeight(weight),m_BW(0)
   {
     m_vtVertexList.assign(vertex_list.begin(), vertex_list.end());
     m_nLength = m_vtVertexList.size();
-    counter ++;
   }
   BasePath():m_nLength(0), m_dWeight(0), m_BW(0){
-    counter ++;
   }
-  ~BasePath(void) { counter--; }
+  ~BasePath(void) {}
 
   bool operator==(const BasePath &other) const
   {

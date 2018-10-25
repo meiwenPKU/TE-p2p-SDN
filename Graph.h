@@ -91,9 +91,9 @@ protected: // members
 public:
 
   // Constructors and Destructor
-  Graph(const string& file_name, int kPath);
+  Graph(const string& file_name, int kPath = 0);
   Graph(const Graph* rGraph);
-  Graph(int kPath):m_nEdgeNum(0),m_nVertexNum(0),m_graphID(0), m_maxBW(0){
+  Graph(int kPath = 0):m_nEdgeNum(0),m_nVertexNum(0),m_graphID(0), m_maxBW(0){
     m_TopoTable.m_nK = kPath;
     m_AdvertisedTopoTable.m_nK = kPath;
   }

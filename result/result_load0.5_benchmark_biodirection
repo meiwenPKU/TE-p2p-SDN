@@ -1,0 +1,60 @@
+time = 0
+Throughput=57.5; Aver_cost=749.9
+time = 1
+Throughput=327.96; Aver_cost=2083.32
+time = 2
+Throughput=686.33; Aver_cost=3538.65
+time = 3
+Throughput=1085.75; Aver_cost=5012.1
+time = 4
+Throughput=1462.47; Aver_cost=6483.96
+time = 5
+Throughput=1842.84; Aver_cost=7918.16
+time = 6
+Throughput=2203.41; Aver_cost=9394.84
+time = 7
+Throughput=2572.32; Aver_cost=10945.8
+time = 8
+Throughput=2955.85; Aver_cost=12473.5
+time = 9
+Throughput=3339.28; Aver_cost=13998.6
+time = 10
+Throughput=3704.59; Aver_cost=15532.8
+time = 11
+Throughput=4076.83; Aver_cost=17122.9
+time = 12
+Throughput=4456.76; Aver_cost=18676
+time = 13
+Throughput=4842.36; Aver_cost=20229.4
+time = 14
+Throughput=5212.33; Aver_cost=21759.2
+time = 15
+Throughput=5587.78; Aver_cost=23318.5
+time = 16
+Throughput=5957.2; Aver_cost=24870.9
+time = 17
+Throughput=6324.23; Aver_cost=26406.5
+time = 18
+Throughput=6704.56; Aver_cost=27943.3
+time = 19
+Throughput=7075.95; Aver_cost=29488.5
+time = 20
+Throughput=7442.3; Aver_cost=31088.3
+time = 21
+Throughput=7824.61; Aver_cost=32644.1
+time = 22
+Throughput=8199.13; Aver_cost=34181.9
+time = 23
+Throughput=8564.55; Aver_cost=35766
+time = 24
+Throughput=8919.48; Aver_cost=37369.7
+time = 25
+Throughput=9304.3; Aver_cost=38978.8
+time = 26
+Throughput=9671.97; Aver_cost=40573
+time = 27
+Throughput=10037.3; Aver_cost=42148.8
+time = 28
+Throughput=10391.4; Aver_cost=43716.6
+time = 29
+Throughput=10765.6; Aver_cost=45293.8
