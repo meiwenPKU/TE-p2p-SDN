@@ -21,6 +21,17 @@ void process_mem_usage(double& vm_usage, double& resident_set)
     resident_set = rss * page_size_kb;
 }
 
+bool IsASCycle(vector<int>& ASpath, int graphID){
+  for (auto it_as = ASpath.begin(); it_as != ASpath.end(); ++it_as)
+  {
+    if (*it_as == graphID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
 void GenerateCommodity(vector<Graph*> ASes, double loadC, int N_AS)
 {
   int GenerateMethod = 1; // Generate specified commodity if 0, otherwise generate random commodities

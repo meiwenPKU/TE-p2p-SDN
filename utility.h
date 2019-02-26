@@ -37,10 +37,21 @@ struct setcomp
   }
 };
 
+struct CompareTopoEntry
+{
+  bool operator() (const TopoTableEntry& lhs, const TopoTableEntry& rhs) const {
+    if (lhs.m_weight < rhs.m_weight){
+      return true;
+    }
+    return false;
+  }
+};
+
 void process_mem_usage(double& vm_usage, double& resident_set);
 
 void GenerateCommodity(vector<Graph*> ASes, double loadC, int N_AS);
 
+bool IsASCycle(vector<int>& ASpath, int graphId);
 /*
  * map the vertex in the network to the vertex in one AS
  * if the graph is constructed based on several ASes,
