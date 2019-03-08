@@ -46,6 +46,7 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS, int kPath)
    */
   int timeStamp;
   int totalMsgExchange = 0;
+  std::set<std::string> advertisedEntries;
   for (timeStamp = 0; timeStamp < 1000000; timeStamp++)
   {
     bool notStable = false;
@@ -94,14 +95,20 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS, int kPath)
                   auto entry = TopoTableEntry(*it_border, (*it_vec)->m_sink, (*it_peer),
                                               (*it_vec)->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
                                               min((*it_vec)->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),(*it_vec)->m_vASPath);
-                  if (mp_queue[(*it_vec)->m_sink].size() == kPath){
-                    auto maxEntry = mp_queue[(*it_vec)->m_sink].top();
-                    if (maxEntry.m_weight > entry.m_weight){
-                      mp_queue[(*it_vec)->m_sink].pop();
+                  std::stringstream buffer;
+                  entry.printEntry(buffer);
+                  auto key = buffer.str();
+                  if (advertisedEntries.find(key) == advertisedEntries.end()){
+                    advertisedEntries.insert(key);
+                    if (mp_queue[(*it_vec)->m_sink].size() == kPath){
+                      auto maxEntry = mp_queue[(*it_vec)->m_sink].top();
+                      if (maxEntry.m_weight > entry.m_weight){
+                        mp_queue[(*it_vec)->m_sink].pop();
+                        mp_queue[(*it_vec)->m_sink].push(entry);
+                      }
+                    } else {
                       mp_queue[(*it_vec)->m_sink].push(entry);
                     }
-                  } else {
-                    mp_queue[(*it_vec)->m_sink].push(entry);
                   }
 
                   if ((*it_vec)->m_source == (*it_vec)->m_next){
@@ -119,14 +126,21 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS, int kPath)
                                                       (*it_nxt)->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer)+(*it_vec)->m_weight,
                                                       min(min((*it_nxt)->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)), (*it_vec)->m_BW),
                                                       (*it_vec)->m_vASPath);
-                      if (mp_queue[(*it_nxt)->m_sink].size() == kPath){
-                        auto maxEntry = mp_queue[(*it_nxt)->m_sink].top();
-                        if (maxEntry.m_weight > newEntry.m_weight){
-                          mp_queue[(*it_nxt)->m_sink].pop();
+                      buffer.str("");
+                      buffer.clear();
+                      newEntry.printEntry(buffer);
+                      key = buffer.str();
+                      if (advertisedEntries.find(key) == advertisedEntries.end()){
+                        advertisedEntries.insert(key);
+                        if (mp_queue[(*it_nxt)->m_sink].size() == kPath){
+                          auto maxEntry = mp_queue[(*it_nxt)->m_sink].top();
+                          if (maxEntry.m_weight > newEntry.m_weight){
+                            mp_queue[(*it_nxt)->m_sink].pop();
+                            mp_queue[(*it_nxt)->m_sink].push(newEntry);
+                          }
+                        } else {
                           mp_queue[(*it_nxt)->m_sink].push(newEntry);
                         }
-                      } else {
-                        mp_queue[(*it_nxt)->m_sink].push(newEntry);
                       }
                     }
                   }
@@ -138,7 +152,10 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS, int kPath)
                     totalMsgExchange += 1;
                     auto entry = it_heap->second.top();
                     it_heap->second.pop();
-                    entry.m_isExchanged.insert((*it)->get_graphID());
+                    // std::stringstream buffer;
+                    // entry.printEntry(buffer);
+                    // cout << buffer.str();
+                    //entry.m_isExchanged.insert((*it)->get_graphID());
                     localStable = (*it)->UpdateTopoTableNaive(entry);
                     notStable = localStable || notStable;
                   }
@@ -149,12 +166,13 @@ void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS, int kPath)
         }
       }
     }
+    cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
     if (!notStable)
     {
       break;
     }
   }
-  cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
+  //cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
 }
 
 
@@ -222,6 +240,7 @@ int main(int argc, char** argv)
   int runTime = 30;
   double Throughput = 0;
   double Aver_cost = 0;
+  int numPaths = 0;
   double vm, rss;
   vector<map<Commodity*, set<pair<BasePath,double>,setcomp> > > v_Allocation;
   for (time = 0; time < runTime; time++)
@@ -289,19 +308,19 @@ int main(int argc, char** argv)
       // get the memory footprint
       //process_mem_usage(vm, rss);
       //cout << "Before TE, VM: " << vm << "; RSS: " << rss << endl;
-      Max_Throughput_TE(VirtualAS[index], &Allocation);
+      //Max_Throughput_TE(VirtualAS[index], &Allocation);
       // get the memory footprint
       //process_mem_usage(vm, rss);
       //cout << "After TE, VM: " << vm << "; RSS: " << rss << endl;
 
-      // if (rand()%101/100.0 < prob_Google)
-      // {
-      //   Google_TE_Optimization(VirtualAS[index], &Allocation);
-      // }
-      // else
-      // {
-      //   Max_Throughput_TE(VirtualAS[index], &Allocation);
-      // }
+      if (rand()%101/100.0 < prob_Google)
+      {
+        Google_TE_Optimization(VirtualAS[index], &Allocation);
+      }
+      else
+      {
+         Max_Throughput_TE(VirtualAS[index], &Allocation);
+      }
 
 
       /*
@@ -377,7 +396,8 @@ int main(int argc, char** argv)
                it_set != it_map->second.end(); ++ it_set)
           {
             Throughput += it_set->second;
-            Aver_cost += it_set->first.Weight();
+            Aver_cost += it_set->second * it_set->first.Weight();
+            numPaths += 1;
             //it_set->first.PrintOut(result);
             //cout << "allocation to this path = " << it_set->second << endl;
             //VirtualAS[index]->printPath(&(it_set->first));
@@ -404,7 +424,7 @@ int main(int argc, char** argv)
               //cout << "-->(" << oriASID << "," << oriNodeID << ")";
 
               Aver_cost += VirtualAS[index]->get_edge_weight(it_set->first.GetVertex(i-1),
-                           it_set->first.GetVertex(i));
+                           it_set->first.GetVertex(i))*it_set->second;
               if (MappedNode->getGraphID() != ASes[index]->get_graphID())
               {
                 p_border = MappedNode;
@@ -430,7 +450,7 @@ int main(int argc, char** argv)
         //cout << "---------------------------------------" << endl;
       }
     }
-    cout << "Throughput=" << Throughput << "; Aver_cost=" << Aver_cost << endl;
+    cout << "Throughput=" << Throughput << "; Aver_cost=" << Aver_cost << "; numPaths = " << numPaths << endl;
     // get the memory footprint
     //process_mem_usage(vm, rss);
     //cout << "After updating commodities, VM: " << vm << "; RSS: " << rss << endl;
