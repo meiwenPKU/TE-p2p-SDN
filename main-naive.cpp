@@ -31,150 +31,100 @@ using namespace std;
 
 int Graph::Graph_ID = 0;
 
-void naive_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS, int kPath)
-{
-  /*
-   * for each AS, generate its own topology table
-   */
-  for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
-  {
+void naive_TE(vector<Graph *> &ASes, vector<InterGraph *> &InterAS) {
+  //for each AS, generate its own topology table
+  for (vector<Graph *>::iterator it = ASes.begin(); it != ASes.end(); ++it) {
     (*it)->ComputeTopoTable();
   }
 
-  /*
-   * advertise topology table until all ASes' topology tables are stable
-   */
+  //for each AS, compute its advertised topology table
+  for (vector<Graph *>::iterator it = ASes.begin(); it != ASes.end(); ++it) {
+    (*it)->ComputeAdvertisedTableNaive();
+  }
+
+  //advertise advertisement table until all ASes' topology tables are
   int timeStamp;
   int totalMsgExchange = 0;
-  std::set<std::string> advertisedEntries;
-  for (timeStamp = 0; timeStamp < 1000000; timeStamp++)
-  {
+  for (timeStamp = 0; timeStamp < 1000000; timeStamp++) {
     bool notStable = false;
-    //---------exchange the topology table between neighboring ASes---------
-    for (vector<Graph*>::iterator it = ASes.begin(); it != ASes.end(); ++it)
-    {
-      for (vector<BaseVertex*>::iterator it_border = (*it)->m_vtBorderVertices.begin();
-           it_border != (*it)->m_vtBorderVertices.end(); ++it_border) // border switch in the AS
+    //---------exchange the advertise table between neighboring AS--------------
+    for (vector<Graph *>::iterator it = ASes.begin(); it != ASes.end(); ++it) {
+      for (vector<BaseVertex *>::iterator it_border =
+               (*it)->m_vtBorderVertices.begin();
+           it_border != (*it)->m_vtBorderVertices.end();
+           ++it_border) // border switch in the AS
       {
-        vector<InterGraph*>::iterator Inter_AS;
-        for ( Inter_AS = InterAS.begin(); Inter_AS != InterAS.end(); ++Inter_AS)
-        {
-          set<BaseVertex*> vertex_set;
-          if (((*Inter_AS)->m_left->get_graphID()) != (*it)->get_graphID()){
-            continue;
-          }
-          int neighborASid = (*Inter_AS)->m_right->get_graphID(); // this is the neighboring AS
-          (*Inter_AS)->get_out_vertices(*it_border,vertex_set);
-          if (vertex_set.size() == 0)
-          {
-            continue;
-          }
-          for (vector<Graph*>::iterator it_AS = ASes.begin(); it_AS != ASes.end(); ++it_AS)
-          {
-            if ((*it_AS)->get_graphID() != neighborASid){
+        vector<InterGraph *>::iterator Inter_AS;
+        for (Inter_AS = InterAS.begin(); Inter_AS != InterAS.end();
+             ++Inter_AS) {
+          set<BaseVertex *> vertex_set;
+          if (((*Inter_AS)->m_left->get_graphID()) == (*it)->get_graphID()) {
+            int neighborASid = (*Inter_AS)->m_right->get_graphID(); // this is the neighboring AS
+            (*Inter_AS)->get_out_vertices(*it_border, vertex_set);
+            if (vertex_set.size() == 0) {
               continue;
             }
-            for (set<BaseVertex*>::iterator it_peer = vertex_set.begin(); it_peer != vertex_set.end(); ++it_peer) // the peer switch of the border switch
-            {
-              // optimize advertisement: for every (source, sink) pair, only advertise the k shortest paths
-              map<BaseVertex*, vector<vector<TopoTableEntry>::iterator>> mp_advertisement; //key is the border switches in this sdn dodmain
-              for (auto it_topoEntry = (*it_AS)->m_TopoTable.m_vEntry.begin(); it_topoEntry != (*it_AS)->m_TopoTable.m_vEntry.end(); ++it_topoEntry){
-                mp_advertisement[it_topoEntry->m_source].push_back(it_topoEntry);
-              }
-              for (auto it_map = mp_advertisement.begin(); it_map != mp_advertisement.end(); ++it_map){
-                // advertise all k shortest paths originated from it_map->first
-                if (it_map->first != (*it_peer)){
-                  continue;
-                }
-                // find all k shortest paths sourced from it_peer
-                map<BaseVertex*, priority_queue<TopoTableEntry, vector<TopoTableEntry>, CompareTopoEntry>> mp_queue; // key is the desinations can be reached
-                for (auto it_vec = it_map->second.begin(); it_vec != it_map->second.end(); it_vec++){
-                  if (IsASCycle((*it_vec)->m_vASPath, (*it)->get_graphID())){
-                    continue;
-                  }
-                  auto entry = TopoTableEntry(*it_border, (*it_vec)->m_sink, (*it_peer),
-                                              (*it_vec)->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
-                                              min((*it_vec)->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),(*it_vec)->m_vASPath);
-                  std::stringstream buffer;
-                  entry.printEntry(buffer);
-                  auto key = buffer.str();
-                  if (advertisedEntries.find(key) == advertisedEntries.end()){
-                    advertisedEntries.insert(key);
-                    if (mp_queue[(*it_vec)->m_sink].size() == kPath){
-                      auto maxEntry = mp_queue[(*it_vec)->m_sink].top();
-                      if (maxEntry.m_weight > entry.m_weight){
-                        mp_queue[(*it_vec)->m_sink].pop();
-                        mp_queue[(*it_vec)->m_sink].push(entry);
-                      }
-                    } else {
-                      mp_queue[(*it_vec)->m_sink].push(entry);
-                    }
-                  }
-
-                  if ((*it_vec)->m_source == (*it_vec)->m_next){
-                    // find all inter-as path started from it_vec->m_sink
-                    for (auto it_nxt = mp_advertisement[(*it_vec)->m_sink].begin(); it_nxt != mp_advertisement[(*it_vec)->m_sink].end(); it_nxt++){
-                      if ((*it_nxt)->m_source == (*it_nxt)->m_next){
-                        continue;
-                      }
-                      // find a path from it_map->first (source) to it_vec->m_sink (another border switch in the same domain)
-                      // and then to (*it_nxt)->m_sink (final destination)
-                      if (IsASCycle((*it_nxt)->m_vASPath, (*it)->get_graphID())){
-                        continue;
-                      }
-                      auto newEntry = TopoTableEntry(*it_border, (*it_nxt)->m_sink, (*it_peer),
-                                                      (*it_nxt)->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer)+(*it_vec)->m_weight,
-                                                      min(min((*it_nxt)->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)), (*it_vec)->m_BW),
-                                                      (*it_vec)->m_vASPath);
-                      buffer.str("");
-                      buffer.clear();
-                      newEntry.printEntry(buffer);
-                      key = buffer.str();
-                      if (advertisedEntries.find(key) == advertisedEntries.end()){
-                        advertisedEntries.insert(key);
-                        if (mp_queue[(*it_nxt)->m_sink].size() == kPath){
-                          auto maxEntry = mp_queue[(*it_nxt)->m_sink].top();
-                          if (maxEntry.m_weight > newEntry.m_weight){
-                            mp_queue[(*it_nxt)->m_sink].pop();
-                            mp_queue[(*it_nxt)->m_sink].push(newEntry);
-                          }
-                        } else {
-                          mp_queue[(*it_nxt)->m_sink].push(newEntry);
+            for (vector<Graph *>::iterator it_AS = ASes.begin();
+                 it_AS != ASes.end(); ++it_AS) {
+              // find the AS the peer switch belonging to
+              if ((*it_AS)->get_graphID() == neighborASid) {
+                for (set<BaseVertex *>::iterator it_peer = vertex_set.begin();
+                     it_peer != vertex_set.end();
+                     ++it_peer) // the peer switch of the border switch
+                {
+                  for (vector<TopoTableEntry>::iterator it_topoEntry =
+                           (*it_AS)->m_AdvertisedTopoTable.m_vEntry.begin();
+                       it_topoEntry !=
+                       (*it_AS)->m_AdvertisedTopoTable.m_vEntry.end();
+                       ++it_topoEntry) {
+                    if (it_topoEntry->m_isExchanged.find(
+                            (*it)->get_graphID()) !=
+                        it_topoEntry->m_isExchanged.end())
+                      continue;
+                    if (it_topoEntry->m_source == (*it_peer)) {
+                      bool isCycle = false;
+                      for (vector<int>::iterator it_as =
+                               it_topoEntry->m_vASPath.begin();
+                           it_as != it_topoEntry->m_vASPath.end(); ++it_as) {
+                        if (*it_as == (*it)->get_graphID()) {
+                          isCycle = true;
+                          break;
                         }
                       }
+                      if (isCycle) {
+                        continue;
+                      }
+                      bool localStable;
+                      totalMsgExchange += 1;
+                      it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
+                      auto new_entry = TopoTableEntry(
+                          *it_border, it_topoEntry->m_sink,
+                          it_topoEntry->m_source,
+                          it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(
+                                                       *it_border, *it_peer),
+                          min(it_topoEntry->m_BW,
+                              (*Inter_AS)->get_edge_BW(*it_border, *it_peer)),
+                          it_topoEntry->m_vASPath);
+                      // new_entry.printEntry();
+                      localStable = (*it)->UpdateTopoTableNaive(new_entry);
+                      notStable = localStable || notStable;
                     }
                   }
                 }
-                // advertise the k shortest paths to it_border
-                for (auto it_heap = mp_queue.begin(); it_heap != mp_queue.end(); it_heap++){
-                  while (!it_heap->second.empty()){
-                    bool localStable;
-                    totalMsgExchange += 1;
-                    auto entry = it_heap->second.top();
-                    it_heap->second.pop();
-                    // std::stringstream buffer;
-                    // entry.printEntry(buffer);
-                    // cout << buffer.str();
-                    //entry.m_isExchanged.insert((*it)->get_graphID());
-                    localStable = (*it)->UpdateTopoTableNaive(entry);
-                    notStable = localStable || notStable;
-                  }
-                }
+                break;
               }
             }
           }
         }
       }
     }
-    cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
-    if (!notStable)
-    {
+    cout << "time stamp = " << timeStamp
+         << "; total msg overhead = " << totalMsgExchange << endl;
+    if (!notStable) {
       break;
     }
   }
-  //cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
 }
-
 
 int main(int argc, char** argv)
 {
@@ -211,7 +161,7 @@ int main(int argc, char** argv)
     }
   }
 
-  naive_TE(ASes,InterASes, kPath);
+  naive_TE(ASes,InterASes);
 
   /*
    * construct a new graph for each AS based on the topology table

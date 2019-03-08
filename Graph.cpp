@@ -1342,7 +1342,7 @@ void Graph::UpdateAdvertisedTableNaive(TopoTableEntry entry)
             if (it1->m_sink == it->m_source && it1->m_source == *it_border)
             {
               double totalWeight = it1->m_weight + it->m_weight;
-              if (it_BorderToBorder.size() < kMaxComputePath)
+              if (it_BorderToBorder.size() < m_TopoTable.m_nK)
               {
                 it_BorderToBorder.push_back(it1);
                 it_BorderToSink.push_back(it);
@@ -1363,7 +1363,7 @@ void Graph::UpdateAdvertisedTableNaive(TopoTableEntry entry)
                   it_BorderToSink[index_max] = it;
                   // find the k-max path in the new table
                   k_max = 0;
-                  for (int i = 0; i < kMaxComputePath; ++i)
+                  for (int i = 0; i < m_TopoTable.m_nK; ++i)
                   {
                     if (it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight > k_max)
                     {
@@ -1486,7 +1486,7 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
             if (it1->m_sink == it->m_source && it1->m_source == *it_border)
             {
               double totalWeight = it1->m_weight + it->m_weight;
-              if (it_BorderToBorder.size() < kMaxComputePath)
+              if (it_BorderToBorder.size() < m_TopoTable.m_nK)
               {
                 it_BorderToBorder.push_back(it1);
                 it_BorderToSink.push_back(it);
@@ -1507,7 +1507,7 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
                   it_BorderToSink[index_max] = it;
                   // find the k-max path in the new table
                   k_max = 0;
-                  for (int i = 0; i < kMaxComputePath; ++i)
+                  for (int i = 0; i < m_TopoTable.m_nK; ++i)
                   {
                     if (it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight > k_max)
                     {
