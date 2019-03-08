@@ -1300,8 +1300,117 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
   }
   entry.m_vASPath.push_back(m_graphID);
   m_TopoTable.Insert(entry);
-  UpdateAdvertisedTable(entry);
+  UpdateAdvertisedTableNaive(entry);
   return true;
+}
+
+void Graph::UpdateAdvertisedTableNaive(TopoTableEntry entry)
+{
+  // find whether the sink of the entry is in the advertise table
+  bool isFind = false;
+  for (vector<TopoTableEntry>::iterator it = m_AdvertisedTopoTable.m_vEntry.begin();
+       it != m_AdvertisedTopoTable.m_vEntry.end(); ++it)
+  {
+    if (it->m_sink == entry.m_sink)
+    {
+      isFind = true;
+      break;
+    }
+  }
+
+  if (isFind)
+  {
+    vector<TopoTableEntry> v_insertTopoEntry;
+    for (vector<BaseVertex*>::iterator it_border = m_vtBorderVertices.begin();
+         it_border != m_vtBorderVertices.end(); ++it_border)
+    {
+      vector<vector<TopoTableEntry>::iterator> it_BorderToBorder;
+      vector<vector<TopoTableEntry>::iterator> it_BorderToSink;
+      double k_max = 0;
+      vector<TopoTableEntry>::iterator it_k_maxB2B; // the iterator of entry from the border node to another border node
+      vector<TopoTableEntry>::iterator it_k_maxB2S; // the iterator of entry from the border to the sink
+      int index_max;
+      // find the k-shortest path from the border switch to the destination
+      for (vector<TopoTableEntry>::iterator it = m_TopoTable.m_vEntry.begin();
+           it != m_TopoTable.m_vEntry.end(); ++it)
+      {
+        if (it->m_sink == entry.m_sink)
+        {
+          for (vector<TopoTableEntry>::iterator it1 = m_TopoTable.m_vEntry.begin();
+               it1 != m_TopoTable.m_vEntry.end(); ++it1)
+          {
+            if (it1->m_sink == it->m_source && it1->m_source == *it_border)
+            {
+              double totalWeight = it1->m_weight + it->m_weight;
+              if (it_BorderToBorder.size() < kMaxComputePath)
+              {
+                it_BorderToBorder.push_back(it1);
+                it_BorderToSink.push_back(it);
+                if (totalWeight > k_max)
+                {
+                  k_max = totalWeight;
+                  it_k_maxB2B = it1;
+                  it_k_maxB2S = it;
+                  index_max = it_BorderToBorder.size() - 1;
+                }
+              }
+              else
+              {
+                if (totalWeight < k_max)
+                {
+                  //delete the k-max path, and insert the new path
+                  it_BorderToBorder[index_max] = it1;
+                  it_BorderToSink[index_max] = it;
+                  // find the k-max path in the new table
+                  k_max = 0;
+                  for (int i = 0; i < kMaxComputePath; ++i)
+                  {
+                    if (it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight > k_max)
+                    {
+                      k_max = it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight;
+                      it_k_maxB2B = it_BorderToBorder[i];
+                      it_k_maxB2S = it_BorderToSink[i];
+                      index_max = i;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      // insert the k-shortest path into the advertisement table
+      for (int i = 0; i < it_BorderToBorder.size(); ++i){
+        auto source = it_BorderToBorder[i]->m_source;
+        auto sink = it_BorderToSink[i]->m_sink;
+        auto cost = it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight;
+        auto bw = min(it_BorderToBorder[i]->m_BW, it_BorderToSink[i]->m_BW);
+        v_insertTopoEntry.push_back(TopoTableEntry(source, sink, NULL, cost, bw, it_BorderToSink[i]->m_vASPath));
+      }
+    }
+  }
+  else
+  {
+    vector<TopoTableEntry> v_insertTopoEntry;
+    for (vector<TopoTableEntry>::iterator it = m_AdvertisedTopoTable.m_vEntry.begin();
+         it != m_AdvertisedTopoTable.m_vEntry.end(); ++it)
+    {
+      if (it->m_sink == entry.m_source)
+      {
+        TopoTableEntry insertEntry = entry;
+        insertEntry.m_source = it->m_source;
+        insertEntry.m_next = NULL;
+        insertEntry.m_weight += it->m_weight;
+        insertEntry.m_BW = min(it->m_BW,entry.m_BW);
+        v_insertTopoEntry.push_back(insertEntry);
+      }
+    }
+    for (vector<TopoTableEntry>::iterator it = v_insertTopoEntry.begin();
+         it != v_insertTopoEntry.end(); ++it)
+    {
+      m_AdvertisedTopoTable.Insert(*it);
+    }
+  }
 }
 
 /*
@@ -1718,7 +1827,6 @@ void Graph::ComputeAdvertisedTable()
 
 void Graph::ComputeAdvertisedTableNaive()
 {
-
   for (vector<TopoTableEntry>::iterator it_topoEntry = m_TopoTable.m_vEntry.begin();
        it_topoEntry != m_TopoTable.m_vEntry.end(); ++it_topoEntry)
   {

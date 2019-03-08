@@ -204,6 +204,16 @@ public:
    */
   void UpdateAdvertisedTable(TopoTableEntry element);
 
+
+  /*
+   * Update the advertised table for BGP-Addpath protocol if the entries of topology table for source-sink pair are updated
+   * 1) find whether any entry in the advertisement table has the same sink as the updated element. If no, find all entries in the advertisement table whose sink is the source of the updated entry, and insert a concatenated entry into the advertisement table
+   * 2) If yes, for each border switch, find the K-shortest path to the sink of the updated entry
+   * 3) compute the max flow of the subgraph consists of the K shortest paths
+   * 4) insert the generated flow entry into the advertisement table
+   */
+  void UpdateAdvertisedTableNaive(TopoTableEntry element);
+
   //---------------------------
 
   BaseVertex* get_vertex(int node_id, int graphID);
