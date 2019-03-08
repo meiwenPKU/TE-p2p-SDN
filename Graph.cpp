@@ -1264,9 +1264,9 @@ void Graph::ComputeTopoTable()
     }
   }
 }
+
 /*
- * Update the topology table in the naive protocol
- * In this protocol, there is no AdvertisedTable, so no need to update it
+ * Update the topology table in the naive (BGP-Addpath) protocol
  */
 bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
 {
@@ -1281,17 +1281,12 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
 
   vector<TopoTableEntry>::iterator it_max_Entry = m_TopoTable.m_vEntry.begin();
   int num_path = 0;
+  // find the number of entries share same source, sink, and next as the input entry, and the entry with max weight
   for (vector<TopoTableEntry>::iterator it = m_TopoTable.m_vEntry.begin();
        it != m_TopoTable.m_vEntry.end(); ++it)
   {
-    // TODO reconsider the case where the topo table contains multiple entries whose
-    //      source, sink, and next are exactly same
-    // if (it->m_source == entry.m_source && it->m_sink == entry.m_sink
-    //     && it->m_next == entry.m_next)
-    // {
-    //   return false;
-    // }
-    if (it->m_source == entry.m_source && it->m_sink == entry.m_sink)
+    if (it->m_source == entry.m_source && it->m_sink == entry.m_sink
+        && it->m_next == entry.m_next)
     {
       num_path ++;
       if (it_max_Entry->m_weight < it->m_weight)
@@ -1304,17 +1299,16 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
   {
     entry.m_vASPath.push_back(m_graphID);
     m_TopoTable.Insert(entry);
-    return true;
   }
   else if (it_max_Entry->m_weight > entry.m_weight)
   {
     m_TopoTable.Delete(it_max_Entry);
     entry.m_vASPath.push_back(m_graphID);
     m_TopoTable.Insert(entry);
-    return true;
   }
-  return false;
+  return true;
 }
+
 /*
  * the input entry has already included the edge between two border switches
  */
@@ -1545,11 +1539,6 @@ void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
       vector<int>::iterator it_path;
       for (auto it_de = it_BorderToSink.begin() + 1; it_de != it_BorderToSink.end(); ++it_de)
       {
-        // for (auto it_as = s_ASpath.begin(); it_as != s_ASpath.end(); it_as++){
-        //   if ((*(*it_de)).m_vASPath.find(*it_as) == (*(*it_de)).m_vASPath.end()){
-        //     s_ASpath.erase(*it_as);
-        //   }
-        // }
         vector<int> v_temp_path(100); // number of ases should <= 100
         it_path = set_intersection(v_ASpath.begin(), v_ASpath.end(),
                                    (*(*it_de)).m_vASPath.begin(), (*(*it_de)).m_vASPath.end(),
