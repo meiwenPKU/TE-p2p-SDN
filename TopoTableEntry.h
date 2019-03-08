@@ -9,6 +9,7 @@
 #define TOPO_TABLE_ENTRY_H
 #include<stdint.h>
 #include <set>
+#include <sstream>
 using namespace std;
 
 class TopoTableEntry{
@@ -29,17 +30,17 @@ public:
 			m_source(source), m_sink(sink), m_next(next),m_weight(weight), m_BW(BW){
 		m_vASPath = ASPath;
     }
-	void printEntry() const {
+	void printEntry(std::stringstream &buffer) const {
 		if (m_next == NULL)
 		{
-			cout << "(" << m_source->getGraphID() << "," << m_source->getID() << ")    "
+			buffer << "(" << m_source->getGraphID() << "," << m_source->getID() << ")    "
 				 << "(N,N)    "
 				 << "(" << m_sink->getGraphID() << "," << m_sink->getID() << ")    "
 				 << m_weight << "   " << m_BW << "   ";
 		}
 		else
 		{
-			cout << "(" << m_source->getGraphID() << "," << m_source->getID() << ")    "
+			buffer << "(" << m_source->getGraphID() << "," << m_source->getID() << ")    "
 				 << "(" << m_next->getGraphID() << "," << m_next->getID() << ")    "
 				 << "(" << m_sink->getGraphID() << "," << m_sink->getID() << ")    "
 				 << m_weight << "   " << m_BW << "   ";
@@ -47,15 +48,15 @@ public:
 
 		for (vector<int>::const_iterator it_as = m_vASPath.begin(); it_as != m_vASPath.end(); ++it_as)
 		{
-			cout << *it_as << ",";
+			buffer << *it_as << ",";
 		}
 
-        cout << "    ";
+        buffer << "    ";
 		for (set<int>::const_iterator it_set = m_isExchanged.begin(); it_set != m_isExchanged.end(); ++it_set)
 		{
-			cout << *it_set << ",";
+			buffer << *it_set << ",";
 		}
-		cout << endl;
+		buffer << endl;
 	}
 
 };

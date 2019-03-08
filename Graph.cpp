@@ -1092,7 +1092,9 @@ void Graph::printAdvertisedTable()
 
 void Graph::printTableEntry(TopoTableEntry& entry)
 {
-  entry.printEntry();
+  std::stringstream buffer;
+  entry.printEntry(buffer);
+  cout << buffer.str();
 }
 
 void Graph::printPath(const BasePath* path)

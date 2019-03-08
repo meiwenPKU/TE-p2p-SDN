@@ -122,10 +122,10 @@ int main(int argc, char** argv)
         Allocation[map_com] = empty_set;
         VirtualAS[index]->m_vCommodity.push_back(map_com);
       }
-      Google_TE_Optimization_Benchmark(VirtualAS[index], &Allocation);
+      //Google_TE_Optimization_Benchmark(VirtualAS[index], &Allocation);
       //Max_Throughput_TE(VirtualAS[index], &Allocation);
 
-      /*
+
       if (rand()%101/100.0 < prob_Google)
       {
       	Google_TE_Optimization_Benchmark(VirtualAS[index], &Allocation);
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
       else
       {
       	Max_Throughput_TE(VirtualAS[index], &Allocation);
-      }*/
+      }
 
       /*
        * print out the allocation results
@@ -209,7 +209,7 @@ int main(int argc, char** argv)
                it_set != it_map->second.end(); ++ it_set)
           {
             Throughput += it_set->second;
-            Aver_cost += it_set->first.Weight();
+            Aver_cost += it_set->second * it_set->first.Weight();
             //it_set->first.PrintOut(result);
             //cout << "allocation to this path = " << it_set->second << endl;
             //VirtualAS[index]->printPath(&(it_set->first));
@@ -236,7 +236,7 @@ int main(int argc, char** argv)
               //cout << "-->(" << oriASID << "," << oriNodeID << ")";
 
               Aver_cost += VirtualAS[index]->get_edge_weight(it_set->first.GetVertex(i-1),
-                           it_set->first.GetVertex(i));
+                           it_set->first.GetVertex(i))*it_set->second;
               if (MappedNode->getGraphID() != ASes[index]->get_graphID())
               {
                 p_border = MappedNode;

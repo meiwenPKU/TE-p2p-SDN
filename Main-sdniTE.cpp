@@ -105,9 +105,16 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                       bool localStable;
                       totalMsgExchange += 1;
                       it_topoEntry->m_isExchanged.insert((*it)->get_graphID());
-                      localStable = (*it)->UpdateTopoTable(TopoTableEntry(*it_border, it_topoEntry->m_sink, it_topoEntry->m_source,
-                                                           it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(*it_border,*it_peer),
-                                                           min(it_topoEntry->m_BW,(*Inter_AS)->get_edge_BW(*it_border,*it_peer)),it_topoEntry->m_vASPath));
+                      auto new_entry = TopoTableEntry(
+                          *it_border, it_topoEntry->m_sink,
+                          it_topoEntry->m_source,
+                          it_topoEntry->m_weight + (*Inter_AS)->get_edge_weight(
+                                                       *it_border, *it_peer),
+                          min(it_topoEntry->m_BW,
+                              (*Inter_AS)->get_edge_BW(*it_border, *it_peer)),
+                          it_topoEntry->m_vASPath);
+                      //new_entry.printEntry();
+                      localStable = (*it)->UpdateTopoTable(new_entry);
                       notStable = localStable || notStable;
                     }
                   }
@@ -119,12 +126,13 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
         }
       }
     }
+    cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
     if (!notStable)
     {
       break;
     }
   }
-  cout << "time stamp = " << timeStamp << "; total msg overhead = " << totalMsgExchange << endl;
+
 }
 
 int main(int argc, char** argv)
@@ -257,7 +265,7 @@ int main(int argc, char** argv)
         VirtualAS[index]->m_vCommodity.push_back(map_com);
       }
       //cout << "The total send feasible throughput = " << totalSendThr << endl;
-      Google_TE_Optimization(VirtualAS[index], &Allocation);
+      //Google_TE_Optimization(VirtualAS[index], &Allocation);
       // get the memory footprint
       //process_mem_usage(vm, rss);
       //cout << "Before TE, VM: " << vm << "; RSS: " << rss << endl;
@@ -266,14 +274,14 @@ int main(int argc, char** argv)
       //process_mem_usage(vm, rss);
       //cout << "After TE, VM: " << vm << "; RSS: " << rss << endl;
 
-      // if (rand()%101/100.0 < prob_Google)
-      // {
-      //   Google_TE_Optimization(VirtualAS[index], &Allocation);
-      // }
-      // else
-      // {
-      //   Max_Throughput_TE(VirtualAS[index], &Allocation);
-      // }
+      if (rand()%101/100.0 < prob_Google)
+      {
+        Google_TE_Optimization(VirtualAS[index], &Allocation);
+      }
+      else
+      {
+        Max_Throughput_TE(VirtualAS[index], &Allocation);
+      }
 
 
       /*
@@ -349,7 +357,7 @@ int main(int argc, char** argv)
                it_set != it_map->second.end(); ++ it_set)
           {
             Throughput += it_set->second;
-            Aver_cost += it_set->first.Weight();
+            Aver_cost += it_set->second * it_set->first.Weight();
             //it_set->first.PrintOut(result);
             //cout << "allocation to this path = " << it_set->second << endl;
             //VirtualAS[index]->printPath(&(it_set->first));
@@ -376,7 +384,7 @@ int main(int argc, char** argv)
               //cout << "-->(" << oriASID << "," << oriNodeID << ")";
 
               Aver_cost += VirtualAS[index]->get_edge_weight(it_set->first.GetVertex(i-1),
-                           it_set->first.GetVertex(i));
+                           it_set->first.GetVertex(i)) * it_set->second;
               if (MappedNode->getGraphID() != ASes[index]->get_graphID())
               {
                 p_border = MappedNode;
