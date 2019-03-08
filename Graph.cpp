@@ -1329,42 +1329,26 @@ bool Graph::UpdateTopoTable(TopoTableEntry entry)
     exit(1);
   }
 
-  vector<TopoTableEntry>::iterator it_max_Entry = m_TopoTable.m_vEntry.begin();
-  int num_path = 0;
+  vector<TopoTableEntry>::iterator exist_Entry = m_TopoTable.m_vEntry.begin();
+  bool is_exist = false;
   for (vector<TopoTableEntry>::iterator it = m_TopoTable.m_vEntry.begin();
        it != m_TopoTable.m_vEntry.end(); ++it)
   {
     if (it->m_source == entry.m_source && it->m_sink == entry.m_sink
         && it->m_next == entry.m_next)
     {
-      return false;
-    }
-    if (it->m_source == entry.m_source && it->m_sink == entry.m_sink)
-    {
-      num_path ++;
-      if (it_max_Entry->m_weight < it->m_weight)
-      {
-        it_max_Entry = it;
-      }
+      exist_Entry = it;
+      is_exist = true;
+      break;
     }
   }
-
-  if (num_path < m_TopoTable.m_nK)
-  {
-    entry.m_vASPath.push_back(m_graphID);
-    m_TopoTable.Insert(entry);
-    UpdateAdvertisedTable(entry);
-    return true;
+  if (is_exist){
+    m_TopoTable.Delete(exist_Entry);
   }
-  else if (it_max_Entry->m_weight > entry.m_weight)
-  {
-    m_TopoTable.Delete(it_max_Entry);
-    entry.m_vASPath.push_back(m_graphID);
-    m_TopoTable.Insert(entry);
-    UpdateAdvertisedTable(entry);
-    return true;
-  }
-  return false;
+  entry.m_vASPath.push_back(m_graphID);
+  m_TopoTable.Insert(entry);
+  UpdateAdvertisedTable(entry);
+  return true;
 }
 
 void Graph::UpdateAdvertisedTable(TopoTableEntry entry)
