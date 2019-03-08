@@ -191,6 +191,11 @@ public:
   void ComputeAdvertisedTable();
 
   /*
+   * Compute the advertisement table for the navie protocol (BGP-Addpath) during initialization. The advertisement table is exactly same as the topology table
+   */
+  void ComputeAdvertisedTableNaive();
+
+  /*
    * Update the advertised table if the entries of topology table for source-sink pair are updated
    * 1) find the entries whose source and sink match the input
    * 2) recompute the BW and weight for this pair according to the way in ComputeAdvertisedTable()

@@ -1295,17 +1295,12 @@ bool Graph::UpdateTopoTableNaive(TopoTableEntry entry)
       }
     }
   }
-  if (num_path < m_TopoTable.m_nK)
-  {
-    entry.m_vASPath.push_back(m_graphID);
-    m_TopoTable.Insert(entry);
-  }
-  else if (it_max_Entry->m_weight > entry.m_weight)
-  {
+  if (num_path >= m_TopoTable.m_nK && it_max_Entry->m_weight > entry.m_weight){
     m_TopoTable.Delete(it_max_Entry);
-    entry.m_vASPath.push_back(m_graphID);
-    m_TopoTable.Insert(entry);
   }
+  entry.m_vASPath.push_back(m_graphID);
+  m_TopoTable.Insert(entry);
+  UpdateAdvertisedTable(entry);
   return true;
 }
 
@@ -1721,6 +1716,15 @@ void Graph::ComputeAdvertisedTable()
   }
 }
 
+void Graph::ComputeAdvertisedTableNaive()
+{
+
+  for (vector<TopoTableEntry>::iterator it_topoEntry = m_TopoTable.m_vEntry.begin();
+       it_topoEntry != m_TopoTable.m_vEntry.end(); ++it_topoEntry)
+  {
+    m_AdvertisedTopoTable.Insert(TopoTableEntry(it_topoEntry->m_source, it_topoEntry->m_sink, NULL, it_topoEntry->m_weight, it_topoEntry->m_BW, it_topoEntry->m_vASPath));
+  }
+}
 
 int Graph::get_vertex_code(BaseVertex* vertex)
 {
