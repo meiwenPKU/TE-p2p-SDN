@@ -763,7 +763,7 @@ void InterGraph::clear()
   m_mpEdgeCodeUsedBW.clear();
 
   //clear the list of vertices objects
-  for_each(m_vtVertices.begin(), m_vtVertices.end(), DeleteFunc<BaseVertex>());
+  //for_each(m_vtVertices.begin(), m_vtVertices.end(), DeleteFunc<BaseVertex>());
   m_vtVertices.clear();
   m_mpVertexIndex.clear();
 
@@ -1229,11 +1229,12 @@ void Graph::ComputeTopoTable()
         // the destination is different from the source
         vector<BasePath*> kPathList;
         YenTopKShortestPathsAlg yenAlg(*this);
-        yenAlg.get_shortest_paths(p_source,p_sink, kK, kPathList);
+        yenAlg.get_shortest_paths(p_source,p_sink, m_AdvertisedTopoTable.m_nK, kPathList);
         if (kPathList.size()==0)
         {
           continue;
         }
+        //cout << "total number of paths = " << kPathList.size() << std::endl;
         for (vector<BasePath*>::iterator it_path = kPathList.begin();
              it_path != kPathList.end(); ++it_path)
         {
@@ -1387,6 +1388,15 @@ void Graph::UpdateAdvertisedTableNaive(TopoTableEntry entry)
         auto bw = min(it_BorderToBorder[i]->m_BW, it_BorderToSink[i]->m_BW);
         v_insertTopoEntry.push_back(TopoTableEntry(source, sink, NULL, cost, bw, it_BorderToSink[i]->m_vASPath));
       }
+    }
+    for (auto it_insert = v_insertTopoEntry.begin(); it_insert != v_insertTopoEntry.end(); ++it_insert)
+    {
+      for (auto it = m_AdvertisedTopoTable.m_vEntry.begin(); it != m_AdvertisedTopoTable.m_vEntry.end(); ++it){
+             if (it->m_sink == it_insert->m_sink && it->m_source == it_insert->m_source){
+               m_AdvertisedTopoTable.Delete(it);
+             }
+           }
+      m_AdvertisedTopoTable.Insert(*it_insert);
     }
   }
   else

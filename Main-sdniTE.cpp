@@ -113,7 +113,9 @@ void SDNi_TE(vector<Graph*>& ASes, vector<InterGraph*>& InterAS)
                           min(it_topoEntry->m_BW,
                               (*Inter_AS)->get_edge_BW(*it_border, *it_peer)),
                           it_topoEntry->m_vASPath);
-                      //new_entry.printEntry();
+                      // std::stringstream buffer;
+                      // new_entry.printEntry(buffer);
+                      // cout << buffer.str();
                       localStable = (*it)->UpdateTopoTable(new_entry);
                       notStable = localStable || notStable;
                     }

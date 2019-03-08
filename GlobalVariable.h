@@ -12,7 +12,7 @@ extern const double NOPATH;
 //    one source to one sink when updating the AdvertisedTable
 // extern const int kPath;
 extern const int kK;
-extern const int kMaxComputePath;
+//extern const int kMaxComputePath;
 
 extern double prob_generate_traffic; // the prob of a node generating traffic
 extern double prob_within_AS; // the prob of the destination of a connection is within the AS

@@ -57,7 +57,9 @@ class DeleteFunc
 public:
   void operator()(const T* it) const
   {
-    delete it;
+    if (it != NULL){
+      delete it;
+    }
   }
 };
 
