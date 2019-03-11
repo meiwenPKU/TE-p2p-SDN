@@ -1229,7 +1229,7 @@ void Graph::ComputeTopoTable()
         // the destination is different from the source
         vector<BasePath*> kPathList;
         YenTopKShortestPathsAlg yenAlg(*this);
-        yenAlg.get_shortest_paths(p_source,p_sink, m_AdvertisedTopoTable.m_nK, kPathList);
+        yenAlg.get_shortest_paths(p_source,p_sink, m_TopoTable.m_nK, kPathList);
         if (kPathList.size()==0)
         {
           continue;
@@ -1382,21 +1382,60 @@ void Graph::UpdateAdvertisedTableNaive(TopoTableEntry entry)
       }
       // insert the k-shortest path into the advertisement table
       for (int i = 0; i < it_BorderToBorder.size(); ++i){
-        auto source = it_BorderToBorder[i]->m_source;
-        auto sink = it_BorderToSink[i]->m_sink;
-        auto cost = it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight;
-        auto bw = min(it_BorderToBorder[i]->m_BW, it_BorderToSink[i]->m_BW);
-        v_insertTopoEntry.push_back(TopoTableEntry(source, sink, NULL, cost, bw, it_BorderToSink[i]->m_vASPath));
+        // if the updated entry is not used for computing the advertise path, ignore it
+        if (*(it_BorderToSink[i]) == entry){
+          auto source = it_BorderToBorder[i]->m_source;
+          auto sink = it_BorderToSink[i]->m_sink;
+          auto cost = it_BorderToBorder[i]->m_weight + it_BorderToSink[i]->m_weight;
+          auto bw = min(it_BorderToBorder[i]->m_BW, it_BorderToSink[i]->m_BW);
+          v_insertTopoEntry.push_back(TopoTableEntry(source, sink, NULL, cost, bw, it_BorderToSink[i]->m_vASPath));
+        }
       }
     }
+    if (v_insertTopoEntry.size() == 0){
+      return;
+    }
+    // find the weights of all possible advertised paths
+    map<pair<BaseVertex*, BaseVertex*>, vector<double>> allWeights;
     for (auto it_insert = v_insertTopoEntry.begin(); it_insert != v_insertTopoEntry.end(); ++it_insert)
     {
-      for (auto it = m_AdvertisedTopoTable.m_vEntry.begin(); it != m_AdvertisedTopoTable.m_vEntry.end(); ++it){
-             if (it->m_sink == it_insert->m_sink && it->m_source == it_insert->m_source){
-               m_AdvertisedTopoTable.Delete(it);
-             }
-           }
-      m_AdvertisedTopoTable.Insert(*it_insert);
+      allWeights[pair<BaseVertex*, BaseVertex*>(it_insert->m_source, it_insert->m_sink)].push_back(it_insert->m_weight);
+    }
+    for (auto it = m_AdvertisedTopoTable.m_vEntry.begin(); it != m_AdvertisedTopoTable.m_vEntry.end(); ++it)
+    {
+      auto key = pair<BaseVertex*, BaseVertex*>(it->m_source, it->m_sink);
+      if (allWeights.find(key) == allWeights.end()){
+        continue;
+      }
+      allWeights[key].push_back(it->m_weight);
+    }
+    // sort the weights
+    for (auto it = allWeights.begin(); it != allWeights.end(); it++){
+      sort(it->second.begin(), it->second.end());
+    }
+    // insert entries
+    for (auto it_insert = v_insertTopoEntry.begin(); it_insert != v_insertTopoEntry.end(); ++it_insert)
+    {
+      if (allWeights[pair<BaseVertex*, BaseVertex*>(it_insert->m_source, it_insert->m_sink)].size() <= m_TopoTable.m_nK || it_insert->m_weight <= allWeights[pair<BaseVertex*, BaseVertex*>(it_insert->m_source, it_insert->m_sink)][m_TopoTable.m_nK-1]){
+        m_AdvertisedTopoTable.Insert(*it_insert);
+      }
+    }
+    //delete entries
+    vector<vector<TopoTableEntry>::iterator> v_deleteTopoEntry;
+    for (auto it = m_AdvertisedTopoTable.m_vEntry.begin(); it != m_AdvertisedTopoTable.m_vEntry.end(); ++it)
+    {
+      auto key = pair<BaseVertex*, BaseVertex*>(it->m_source, it->m_sink);
+      if (allWeights.find(key) == allWeights.end()){
+        continue;
+      }
+      if (allWeights[key].size() <= m_TopoTable.m_nK || it->m_weight <= allWeights[key][m_TopoTable.m_nK-1]){
+        continue;
+      }
+      v_deleteTopoEntry.push_back(it);
+    }
+    for (auto it_del = v_deleteTopoEntry.begin(); it_del != v_deleteTopoEntry.end(); it_del++)
+    {
+      m_AdvertisedTopoTable.Delete(*it_del);
     }
   }
   else

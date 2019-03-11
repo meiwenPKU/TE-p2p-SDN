@@ -30,6 +30,9 @@ public:
 			m_source(source), m_sink(sink), m_next(next),m_weight(weight), m_BW(BW){
 		m_vASPath = ASPath;
     }
+	bool operator==(TopoTableEntry& right){
+		return (m_source == right.m_source && m_sink == right.m_sink && m_next == right.m_next && m_weight == right.m_weight && m_BW == right.m_BW && m_vASPath == right.m_vASPath);
+	}
 	void printEntry(std::stringstream &buffer) const {
 		if (m_next == NULL)
 		{

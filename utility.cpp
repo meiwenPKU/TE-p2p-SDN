@@ -108,9 +108,12 @@ void GenerateCommodity(vector<Graph*> ASes, double loadC, int N_AS)
             {
               desti = rand()%(ASes[i]->get_vertex_num());
             }
-            double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
+            double demand =
+                commodity_demand[SelectValue(commodity_demand, prob_demand)];
             demand *= loadC;
-	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),ASes[i]->get_vertex(desti,ASes[i]->get_graphID()),demand);
+            Commodity *pt_commodity = new Commodity(
+                ASes[i]->get_vertex(j, ASes[i]->get_graphID()),
+                ASes[i]->get_vertex(desti, ASes[i]->get_graphID()), demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
             v_commodity.push_back(pt_commodity);
             //cout << "(" << i << ", " << j << ") --> (" << i << ", " << desti << "): " << demand << endl;
@@ -126,8 +129,10 @@ void GenerateCommodity(vector<Graph*> ASes, double loadC, int N_AS)
             int desti = rand()%(ASes[desti_AS]->get_vertex_num());
             double demand = commodity_demand[SelectValue(commodity_demand,prob_demand)];
             demand *= loadC;
-	    Commodity* pt_commodity = new Commodity(ASes[i]->get_vertex(j,ASes[i]->get_graphID()),
-                                                    ASes[desti_AS]->get_vertex(desti,ASes[desti_AS]->get_graphID()),demand);
+            Commodity *pt_commodity =
+                new Commodity(ASes[i]->get_vertex(j, ASes[i]->get_graphID()),
+                              ASes[desti_AS]->get_vertex(desti, ASes[desti_AS]->get_graphID()),
+                              demand);
             ASes[i]->m_vCommodity.push_back(pt_commodity);
             v_commodity.push_back(pt_commodity);
             //cout << "(" << i << ", " << j << ") --> (" << desti_AS << ", " << desti << "): " << demand << endl;
@@ -172,12 +177,15 @@ int SelectValue(vector<int>& value, vector<double>& prob_dist)
   int index = 0;
   for (vector<double>::iterator it = prob_dist.begin(); it != prob_dist.end(); ++it)
   {
-    if (prob >= sum && prob <= sum+*it)
+    if (prob >= sum && prob <= sum+(*it))
     {
       break;
     }
     sum += *it;
     index++;
+  }
+  if (index >= value.size()){
+    index = value.size() - 1;
   }
   return index;
 }
